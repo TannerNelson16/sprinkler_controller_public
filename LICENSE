@@ -1,0 +1,32 @@
+Intellidwell Sprinkler Controller Firmware
+Copyright (C) 2025 Tanner Nelson
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License (GPL) version 3
+as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+🔒 Additional Terms:
+
+As the author, I grant permission to use, modify, and redistribute this code
+for personal and non-commercial use in accordance with the GPLv3.
+
+**Commercial Use Restriction:**  
+Use of this software in any **commercial hardware product**, including but not limited to manufacturing, marketing, or selling physical sprinkler controllers that incorporate this code or its derivatives, is **not permitted** without express written permission from the author (Tanner Nelson / Intellidwell).
+
+To request commercial licensing, contact: tanner@intellidwell.net
+
+This restriction does **not** apply to non-commercial forks, personal projects, or open-source derivative works that are not sold or monetized through hardware.
+
+---
+
+SPDX-License-Identifier: GPL-3.0-only
