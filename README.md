@@ -17,7 +17,7 @@ This project is licensed under the [GNU General Public License v3 (GPLv3)](https
 
 The intent is to support open development and tinkering while protecting against commercial knockoffs.
 
-If you're interested in commercial use, please contact Tanner Nelson at [tanner@intellidwell.net](mailto:tanner@intellidwell.net) to discuss licensing.
+If you're interested in commercial use, please contact Tanner Nelson at [tanner.nelson@intellidwell.net](mailto:tanner.nelson@intellidwell.net) to discuss licensing.
 
 ---
 
