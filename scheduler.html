@@ -1,8 +1,3 @@
-# Intellidwell Sprinkler Controller Firmware
-# Copyright (C) 2025 Tanner Nelson
-#
-# Licensed under GPLv3 with additional non-commercial hardware restrictions.
-# See LICENSE for details.
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -365,14 +360,43 @@ label.break-line {
 
 
 <script>
-function initDateTime() {
-    setInterval(() => {
-        document.getElementById('currentDateTime').innerHTML = new Date().toLocaleString();
-    }, 1000);
+function pad(num) {
+    return num.toString().padStart(2, '0');
 }
 
+function initDateTime() {
+    async function updateClock() {
+        try {
+            const res = await fetch('/api/time');
+            const data = await res.json();
+
+            let hour = data.hour;
+            const minute = pad(data.minute);
+            const second = pad(data.second);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+
+            hour = hour % 12;
+            hour = hour ? hour : 12; // convert 0 to 12
+
+            const formatted = `${pad(data.month)}/${pad(data.day)}/${data.year} ` +
+                              `${pad(hour)}:${minute}:${second} ${ampm}`;
+
+            document.getElementById('currentDateTime').innerHTML = formatted;
+        } catch (e) {
+            document.getElementById('currentDateTime').innerHTML = 'Time unavailable';
+        }
+    }
+
+    updateClock(); // call immediately on page load
+    setInterval(updateClock, 1000); // update every second
+}
+
+
 function setSchedule(pin, form) {
-    const data = new URLSearchParams(new FormData(form)).toString();
+    const formData = new FormData(form);
+
+
+    const data = new URLSearchParams(formData).toString();
     fetch(`/set-schedule/${pin}`, {
         method: 'POST',
         body: data,

@@ -1,8 +1,3 @@
-# Intellidwell Sprinkler Controller Firmware
-# Copyright (C) 2025 Tanner Nelson
-#
-# Licensed under GPLv3 with additional non-commercial hardware restrictions.
-# See LICENSE for details.
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,7 +60,21 @@
         <input type="password" id="mqtt_password" name="mqtt_password"><br><br>
     </fieldset>
 
+    <label for="timezone">Time Zone:</label><br>
+    <select id="timezone" name="timezone">
+      <option value="-7" selected>Mountain Standard Time (MST)</option>
+      <option value="-8">Pacific Standard Time (PST)</option>
+      <option value="-6">Central Standard Time (CST)</option>
+      <option value="-5">Eastern Standard Time (EST)</option>
+      <option value="0">UTC</option>
+      <option value="1">Central European Time (CET)</option>
+      <option value="5.5">India Standard Time (IST)</option>
+      <option value="10">Australian Eastern Time (AET)</option>
+    </select><br><br>
     <button type="button" class="styled-button" onclick="saveSettings()">Save Settings</button>
+    
+
+
 </form>
 
 <script>
@@ -82,8 +91,9 @@ function saveSettings() {
         jsonData[key] = value;
     });
 
-    // Handle the checkbox for MQTT explicitly
+    // Add the manually-handled values *after* the form data is parsed
     jsonData['mqtt_enabled'] = document.getElementById('enable_mqtt').checked ? 1 : 0;
+    jsonData['timezone'] = document.getElementById('timezone').value;
 
     fetch('/save-settings', {
         method: 'POST',
@@ -110,6 +120,7 @@ function saveSettings() {
     })
     .catch(error => console.error('Error saving settings:', error));
 }
+
 
 </script>
 

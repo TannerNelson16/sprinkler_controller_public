@@ -1,8 +1,3 @@
-# Intellidwell Sprinkler Controller Firmware
-# Copyright (C) 2025 Tanner Nelson
-#
-# Licensed under GPLv3 with additional non-commercial hardware restrictions.
-# See LICENSE for details.
 from microdot import Microdot, send_file
 import network
 from machine import Pin, RTC, reset
@@ -20,6 +15,7 @@ import uos as os
 import gc
 import socket
 import usocket
+
 
 machine.sleep(0)       # Disable light sleep
 global MQTT
@@ -40,7 +36,8 @@ def load_settings():
                 "mqtt_server": config.get("mqtt_server", ""),
                 "mqtt_username": config.get("mqtt_username", ""),
                 "mqtt_password": config.get("mqtt_password", ""),
-                "mqtt_enabled": config.get("mqtt_enabled", 0)  # Default to disabled (0) if not present
+                "mqtt_enabled": config.get("mqtt_enabled", 0),  # Default to disabled (0) if not present
+                "timezone": config.get("timezone",""),
             }
     except (OSError, ValueError) as e:
         print(f"Error loading settings.json: {e}, loading default settings...")
@@ -50,7 +47,8 @@ def load_settings():
             "mqtt_server": "",
             "mqtt_username": "",
             "mqtt_password": "",
-            "mqtt_enabled": 0  # Default to disabled
+            "mqtt_enabled": 0,  # Default to disabled
+            "timezone":""
         }
 
 
@@ -84,6 +82,20 @@ MAX_RECONNECT_ATTEMPTS = 10  # Maximum number of reconnection attempts
 
 #WIFI and MQTT Credentials
 
+def is_dst(year, month, day, weekday):
+    """Determine if current date falls in US DST range."""
+    # Compute second Sunday in March
+    if month == 3:
+        second_sunday = 14 - (utime.mktime((year, 3, 1, 0, 0, 0, 0, 0)) % 7)
+        return day >= second_sunday
+
+    # Compute first Sunday in November
+    if month == 11:
+        first_sunday = 7 - (utime.mktime((year, 11, 1, 0, 0, 0, 0, 0)) % 7)
+        return day < first_sunday
+
+    return 3 < month < 11  # April–October
+
 def load_settings():
     try:
         with open('settings.json', 'r') as f:
@@ -95,7 +107,8 @@ def load_settings():
             "wifi_password": "",
             "mqtt_server": "",
             "mqtt_username": "",
-            "mqtt_password": ""
+            "mqtt_password": "",
+            "timezone":""
         }
 
 def save_settings(settings):
@@ -342,7 +355,8 @@ def set_schedule(request, pin):
     schedule = {
         'days': days,
         'onTime': onTime,
-        'offTime': offTime
+        'offTime': offTime,
+        'enabled' : True
     }
     schedules[pin] = schedule
     with open('schedules.json', 'w') as f:
@@ -531,19 +545,49 @@ async def connect_to_wifi():
     log_message('Failed to connect to Wi-Fi after all attempts. Entering AP mode as a last resort.')
     enter_AP_mode() 
 
+@app.route("/api/time")
+def get_rtc_time(request):
+    rtc = machine.RTC().datetime()
+    return json.dumps({
+        "year": rtc[0],
+        "month": rtc[1],
+        "day": rtc[2],
+        "hour": rtc[4],
+        "minute": rtc[5],
+        "second": rtc[6]
+    }), {'Content-Type': 'application/json'}
+
+
+
 async def sync_time():
-    timezone_offset = -6  # Adjust this to your timezone offset from UTC
     while True:
         try:
-            ntptime.settime()
+            ntptime.settime()  # set RTC to UTC by default
             log_message("Time synchronized with NTP server.")
-            tm = utime.localtime(utime.mktime(utime.localtime()) + timezone_offset * 3600)
-            machine.RTC().datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
-            log_message(f"Time adjusted to local timezone: {tm}")
+
+            config = load_settings()
+            base_offset = int(config.get("timezone"))#, -7))
+            
+            now_utc = utime.localtime()
+            year, month, day, hour, minute, second, weekday, yearday = now_utc
+            
+            # DST applies only if not UTC
+            dst_active = is_dst(year, month, day, weekday) if base_offset != 0 else False
+            offset = base_offset + (1 if dst_active else 0)
+
+            log_message(f"DST active: {dst_active}. Offset: UTC{offset}")
+
+            # Adjust RTC to reflect local time
+            adjusted_time = utime.localtime(utime.mktime(now_utc) + offset * 3600)
+            machine.RTC().datetime((adjusted_time[0], adjusted_time[1], adjusted_time[2],
+                                    adjusted_time[6]+1, adjusted_time[3], adjusted_time[4], adjusted_time[5], 0))
+            log_message(f"RTC adjusted to local time: {adjusted_time}")
+
         except Exception as e:
             log_message(f"Failed to sync time: {e}")
-        await asyncio.sleep(86400)  # Sync time every day
-        gc.collect()  # Run garbage collection
+
+        await asyncio.sleep(86400)  # once per day
+        gc.collect()
 
 async def check_schedules():
     global timers
@@ -611,16 +655,25 @@ async def check_schedules():
                         if current_time == on_time:
                             if rain_delay > 0:
                                 log_message(f"Rain delay active — skipping schedules (days remaining: {rain_delay})")
-                            else:    
+                            else:
+                                on_hour, on_minute = map(int, schedule['onTime'].split(':'))
+                                off_hour, off_minute = map(int, schedule['offTime'].split(':'))
+
+                                # Convert to minutes since midnight
+                                on_total = on_hour * 60 + on_minute
+                                off_total = off_hour * 60 + off_minute
+
+                                # Handle overnight schedules
+                                duration_minutes = (off_total - on_total) % (24 * 60)
                                 relays[pin].value(1)
                                 timers[pin] = {
-                                'end_time': time.time() + 3600,  # fallback 1 hr
-                                'task': None
+                                    'end_time': time.time() + duration_minutes * 60,
+                                    'task': None
                                 }
-                                log_message(f"Relay {pin+1} turned ON at {current_time} (schedule).")
+                                log_message(f"Relay {pin+1} turned ON at {current_time} (schedule, {duration_minutes} min).")
                                 if MQTT == 1:
                                     publish_relay_status(client, pin, 1)
-
+                
                         elif current_time == off_time:
                             if rain_delay > 0:
                                 log_message(f"Rain delay active — skipping schedules (days remaining: {rain_delay})")
@@ -841,7 +894,7 @@ async def main_without_mqtt():
         await connect_to_wifi()
         start_new_thread(run_server, ())
         await asyncio.gather(
-            #sync_time(),
+            sync_time(),
             check_schedules()
         )
     except Exception as e:
@@ -853,6 +906,7 @@ async def main_without_mqtt_or_wifi():
     MQTT = 0
     try:
         await asyncio.gather(
+            sync_time(),
             check_schedules(),
             run_ap_mode()
         )
