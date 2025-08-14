@@ -16,14 +16,14 @@ try:
 except ImportError:
     import io
 
-from microdot import Microdot as BaseMicrodot
-from microdot import mro
-from microdot import NoCaseDict
-from microdot import Request as BaseRequest
-from microdot import Response as BaseResponse
-from microdot import print_exception
-from microdot import HTTPException
-from microdot import MUTED_SOCKET_ERRORS
+from microdotnew import Microdot as BaseMicrodot
+from microdotnew import mro
+from microdotnew import NoCaseDict
+from microdotnew import Request as BaseRequest
+from microdotnew import Response as BaseResponse
+from microdotnew import print_exception
+from microdotnew import HTTPException
+from microdotnew import MUTED_SOCKET_ERRORS
 
 
 def _iscoroutine(coro):

@@ -1,13 +1,13 @@
-from microdotNEW import Microdot, send_file
-import network
+import uasyncio as asyncio
+from microdot import Microdot, send_file
 from machine import Pin, RTC, reset
+import network
 import machine
 import ujson
 import json
 import time
 from time import sleep
 from _thread import start_new_thread
-import uasyncio as asyncio
 from umqtt.simple import MQTTClient
 import ntptime
 import utime
@@ -16,13 +16,10 @@ import gc
 import socket
 import usocket
 
-
 machine.sleep(0)       # Disable light sleep
 global MQTT
 
 timers = {}
-
-
 def load_settings():
     try:
         with open('settings.json', 'r') as f:
@@ -50,12 +47,8 @@ def load_settings():
             "mqtt_enabled": 0,  # Default to disabled
             "timezone":""
         }
-
-
     
 config = load_settings()
-
-
 SSID = config['ssid']
 PASSWORD = config['wifi_password']
 MQTT_BROKER = config['mqtt_server']
@@ -69,7 +62,6 @@ wifi = network.WLAN(network.STA_IF)
 for relay in relays:
     relay.value(0)
 
-
 CLIENT_ID = "intellidwell_SC"
 TOPIC_BASE = "home/sprinklers/"
 
@@ -81,7 +73,6 @@ LOG_MAX_LINES = 25  # Keep only the last 25 lines of logs
 MAX_RECONNECT_ATTEMPTS = 10  # Maximum number of reconnection attempts
 
 #WIFI and MQTT Credentials
-
 def is_dst(year, month, day, weekday):
     """Determine if current date falls in US DST range."""
     # Compute second Sunday in March
@@ -123,9 +114,6 @@ def save_settings(settings):
     except Exception as e:
         log_message(f"Error saving settings: {e}")
 
-
-
-
 def log_message(message):
     current_time = time.localtime()
     timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*current_time[:6])
@@ -152,7 +140,6 @@ def log_message(message):
 
     # Print the log entry to the console for immediate feedback
     print(f"LOG: {timestamp}: {message}")
-
 
 def command_callback(topic, msg):
     topic = topic.decode()
@@ -271,7 +258,6 @@ def get_logs(request):
     except Exception as e:
         log_message(f"Unexpected error: {e}")
         return 'Unexpected error', 500
-
 
 @app.route('/clear-logs', methods=['POST'])
 def clear_logs(request):
@@ -430,7 +416,6 @@ def timer_status(request):
         log_message(f"Error in /timer-status: {e}")
         return '{}', 500
 
-
 @app.route('/cancel-timer/<pin>')
 def cancel_timer(request, pin):
     try:
@@ -445,7 +430,6 @@ def cancel_timer(request, pin):
     except Exception as e:
         log_message(f"Error in /cancel-timer route: {e}")
         return 'Failed to cancel timer', 500
-
 
 @app.route('/relay/<int:pin>/<state>')
 async def relay_toggle(request, pin, state):
@@ -492,7 +476,7 @@ def get_schedules(request):
     return ujson.dumps(schedules), {'Content-Type': 'application/json'}
 
 @app.route('/static/<path:path>')
-async def static(request, path):
+def static(request, path):
     if '..' in path:
         # directory traversal is not allowed
         return 'Not found', 404
@@ -560,8 +544,6 @@ def get_rtc_time(request):
         "minute": rtc[5],
         "second": rtc[6]
     }), {'Content-Type': 'application/json'}
-
-
 
 async def sync_time():
     while True:
@@ -712,11 +694,6 @@ async def check_schedules():
 
         await asyncio.sleep(1)
 
-
-
-
-
-
 def publish_discovery(client):
     try:
         base_topic = "homeassistant/switch/SC{}"
@@ -832,9 +809,6 @@ def publish_schedule_status(client, pin, enabled):
     except Exception as e:
         log_message(f"Failed to publish schedule status: {e}")
 
-
-
-
 def run_server():
     log_message("Starting Microdot server...")
 
@@ -870,8 +844,6 @@ def run_server():
 
     except Exception as e:
         log_message(f"Failed to start or run Microdot server: {e}")
-
-        
         
 async def main():
     if MQTT == 0:

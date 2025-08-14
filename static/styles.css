@@ -1,0 +1,292 @@
+body {
+    background-color: #333;
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    position: relative;
+}
+
+h1 {
+    color: #FFD700;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    /* Retain original fixed width */
+    height: 34px;
+    margin: 10px;
+    vertical-align: middle;
+    /* Ensure vertical alignment with text */
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #2196F3;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+button {
+    background-color: #2196F3;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+button_red {
+    background-color: #FF0000;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.logs-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #2196F3;
+    border: none;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logs-button svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 5px;
+    }
+
+    .switch {
+        margin: 5px 0;
+        /* Adjust margins for mobile */
+    }
+
+    button {
+        padding: 12px;
+    }
+
+    .logs-button {
+        top: 10px;
+        right: 10px;
+        font-size: 20px;
+    }
+}
+
+
+label,
+input {
+    margin-bottom: 10px;
+}
+
+.disabled {
+    background-color: #555;
+}
+
+.styled-button {
+    background-color: #2196F3;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 0;
+    cursor: pointer;
+    border-radius: 12px;
+    width: 100%;
+    /* Full-width button */
+}
+
+.styled-button:hover {
+    background-color: #1e88e5;
+    /* Darker color on hover */
+}
+
+input[type="checkbox"],
+input[type="time"] {
+    margin: 5px;
+}
+
+button {
+    background-color: #2196F3;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.relay-scheduler {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #FFF;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input[type="checkbox"],
+input[type="time"] {
+    margin: 5px;
+    margin-right: 3px;
+}
+
+/* Style adjustments to force new line */
+label.break-line {
+    flex-basis: 100%;
+    /* Forces the label to take full width */
+    margin-top: 10px;
+    /* Add some spacing before the element */
+}
+
+.time-label {
+    flex-basis: 100%;
+    /* Forces the label to take full width */
+}
+
+@media (max-width: 600px) {
+    label {
+        width: auto;
+        /* Ensure labels fit content on small screens */
+    }
+
+    input[type="time"] {
+        width: 100%;
+        /* Full width for better accessibility */
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
+h1 {
+    color: #FFD700;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+}
+
+.log-area {
+    width: 100%;
+    height: 400px;
+    border: 1px solid #ccc;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #444;
+    color: white;
+    white-space: pre-line;
+}
+
+.button {
+    padding: 10px 20px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+}
+
+.button:disabled {
+    background-color: #aaa;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 5px;
+    }
+
+    .log-area {
+        height: 300px;
+    }
+
+    .button {
+        width: 100%;
+        padding: 12px;
+    }
+}
