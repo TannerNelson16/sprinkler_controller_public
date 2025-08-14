@@ -257,7 +257,7 @@ app = Microdot()
 
 @app.route('/logs-page')
 def logs_page(request):
-    return send_file('logs.html')
+    return send_file('logs.html', max_age=86400)
 
 @app.route('/get-logs')
 def get_logs(request):
@@ -317,11 +317,11 @@ def toggle_relay(request, pin, state):
     return 'Invalid relay or command', 400
 @app.route('/')
 def index(request):
-    return send_file('index.html')
+    return send_file('index.html', max_age=86400)
 
 @app.route('/settings')
 def settings(request):
-    return send_file('settings.html')
+    return send_file('settings.html', max_age=86400)
 
 @app.route('/save-settings', methods=['POST'])
 def save_settings_route(request):
@@ -343,7 +343,7 @@ def get_relay_states(request):
 
 @app.route('/scheduler')
 def scheduler(request):
-    return send_file('scheduler.html')
+    return send_file('scheduler.html', max_age=86400)
 
 @app.route('/set-schedule/<pin>', methods=['POST'])
 def set_schedule(request, pin):

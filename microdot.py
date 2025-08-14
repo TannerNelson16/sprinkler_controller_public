@@ -641,7 +641,7 @@ class Response():
         return cls(status_code=status_code, headers={'Location': location})
 
     @classmethod
-    def send_file(cls, filename, status_code=200, content_type=None):
+    def send_file(cls, filename, status_code=200, content_type=None, max_age=None):
         """Send file contents in a response.
 
         :param filename: The filename of the file.
@@ -661,9 +661,14 @@ class Response():
                 content_type = Response.types_map[ext]
             else:
                 content_type = 'application/octet-stream'
+
+        headers = {'Content-Type': content_type}
+
+        if max_age is not None:
+            headers['Cache-Control'] = 'max-age={}'.format(max_age)
+
         f = open(filename, 'rb')
-        return cls(body=f, status_code=status_code,
-                   headers={'Content-Type': content_type})
+        return cls(body=f, status_code=status_code, headers=headers)
 
 
 class URLPattern():
