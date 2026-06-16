@@ -73,7 +73,7 @@ for relay in relays:
 CLIENT_ID = "intellidwell_SC"
 TOPIC_BASE = "home/sprinklers/"
 
-client = MQTTClient(CLIENT_ID, MQTT_BROKER, user=MQTT_USER, password=MQTT_PASSWORD, keepalive=0)
+client = MQTTClient(CLIENT_ID, MQTT_BROKER, user=MQTT_USER, password=MQTT_PASSWORD, keepalive=60)
 client.set_last_will(f"{TOPIC_BASE}status", "Offline", retain=True)
 
 LOG_FILE = 'logs.txt'
@@ -126,31 +126,32 @@ def save_settings(settings):
 
 
 
+_log_cache = []
+try:
+    with open(LOG_FILE, 'r') as f:
+        _log_cache = f.read().splitlines()
+    if len(_log_cache) > LOG_MAX_LINES:
+        _log_cache = _log_cache[-LOG_MAX_LINES:]
+except Exception:
+    _log_cache = []
+
 def log_message(message):
+    global _log_cache
     current_time = time.localtime()
     timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*current_time[:6])
-    log_entry = f"{timestamp}: {message}\n"
-
+    log_entry = f"{timestamp}: {message}"
+    
+    _log_cache.append(log_entry)
+    if len(_log_cache) > LOG_MAX_LINES:
+        _log_cache = _log_cache[-LOG_MAX_LINES:]
+        
     try:
-        # Open the log file in append mode and write the log entry
-        with open(LOG_FILE, 'a') as f:
-            f.write(log_entry)
-
-        # Read the log file, ensuring we keep only the last LOG_MAX_LINES lines
-        with open(LOG_FILE, 'r') as f:
-            lines = f.read().splitlines()  # Read as a list of strings without the newline characters
-
-        # If the log exceeds the maximum size, write back the trimmed version
-        if len(lines) > LOG_MAX_LINES:
-            with open(LOG_FILE, 'w') as f:
-                f.write("\n".join(lines[-LOG_MAX_LINES:]) + "\n")  # Write lines back as a single string
-
-    except (OSError, AttributeError) as e:
-        # Log an error message to the console if writing to the log fails
+        with open(LOG_FILE, 'w') as f:
+            f.write("\n".join(_log_cache) + "\n")
+    except Exception as e:
         print(f"Failed to log message: {e}")
         print(f"LOG ENTRY (Fallback): {log_entry}")
 
-    # Print the log entry to the console for immediate feedback
     print(f"LOG: {timestamp}: {message}")
 
 
@@ -191,12 +192,29 @@ async def connect_mqtt():
 
 async def subscribe_to_topics():
     try:
+        # Publish Online status first
+        try:
+            client.publish(f"{TOPIC_BASE}status", "Online", retain=True)
+            log_message("Published Online status to MQTT")
+        except Exception as e:
+            log_message(f"Failed to publish Online status: {e}")
+
         for i in range(len(relays)):
             client.subscribe(f"cmnd/zone/{i}/power")
             client.subscribe(f"cmnd/zone/{i}/schedule")
             log_message(f"Subscribed to: cmnd/zone/{i}/power and cmnd/zone/{i}/schedule")
         publish_discovery(client)
         publish_schedule_discovery(client)
+        # Publish current states so Home Assistant has them immediately
+        for i in range(len(relays)):
+            try:
+                publish_relay_status(client, i, relays[i].value())
+            except:
+                pass
+            try:
+                publish_schedule_status(client, i, schedules[i].get("enabled", True))
+            except:
+                pass
     except Exception as e:
         log_message(f"Failed to subscribe to topics: {e}")
 
@@ -732,6 +750,9 @@ def publish_discovery(client):
                     "model": "Sprinkler Controller V1.0",
                     "sw_version": "1.0"
                 },
+                "availability_topic": f"{TOPIC_BASE}status",
+                "payload_available": "Online",
+                "payload_not_available": "Offline",
                 "platform": "mqtt"
             }
             client.publish(topic, ujson.dumps(payload), retain=True)
@@ -811,6 +832,9 @@ def publish_schedule_discovery(client):
                     "model": "Sprinkler Controller V1.0",
                     "sw_version": "1.0"
                 },
+                "availability_topic": f"{TOPIC_BASE}status",
+                "payload_available": "Online",
+                "payload_not_available": "Offline",
                 "platform": "mqtt"
             }
             client.subscribe(f"cmnd/zone/{i}/schedule")
@@ -869,6 +893,15 @@ def run_server():
 
         
         
+async def mqtt_ping_loop():
+    while True:
+        try:
+            if MQTT == 1:
+                client.ping()
+        except Exception as e:
+            log_message(f"MQTT ping failed: {e}")
+        await asyncio.sleep(20)
+
 async def main():
     if MQTT == 0:
         await main_without_mqtt()
@@ -880,7 +913,8 @@ async def main():
         await asyncio.gather(
             sync_time(),
             check_schedules(),
-            check_messages()
+            check_messages(),
+            mqtt_ping_loop()
         )
     except Exception as e:
         log_message(f"Error in main loop: {e}")
