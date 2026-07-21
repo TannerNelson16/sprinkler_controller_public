@@ -62,6 +62,7 @@ MQTT_BROKER = config['mqtt_server']
 MQTT_USER = config['mqtt_username']
 MQTT_PASSWORD = config['mqtt_password']
 MQTT = config.get('mqtt_enabled', 1) 
+is_mqtt_connected = False
 # Constants
 RELAY_PINS = [13, 21, 14, 27, 26, 25, 33, 32, 19, 18]
 relays = [Pin(pin, Pin.OUT) for pin in RELAY_PINS]
@@ -181,14 +182,15 @@ def command_callback(topic, msg):
 client.set_callback(command_callback)
 
 async def connect_mqtt():
+    global is_mqtt_connected
     try:
         client.connect()
+        is_mqtt_connected = True
         log_message("MQTT connected.")
         await subscribe_to_topics()
     except Exception as e:
-        log_message(f"Failed to connect to MQTT: {e}")
-        await asyncio.sleep(5)
-        await reconnect()
+        is_mqtt_connected = False
+        log_message(f"Failed to connect to MQTT at startup: {e}")
 
 async def subscribe_to_topics():
     try:
@@ -219,48 +221,43 @@ async def subscribe_to_topics():
         log_message(f"Failed to subscribe to topics: {e}")
 
 async def check_messages():
+    global is_mqtt_connected
     while True:
         try:
-            client.check_msg()
-        except OSError as e:
-            log_message(f"Failed to check MQTT messages: {e}")
-            await reconnect()
+            if MQTT == 1:
+                if not is_mqtt_connected:
+                    log_message("MQTT not connected. Attempting connection...")
+                    try:
+                        try:
+                            client.disconnect()
+                        except:
+                            pass
+                        await asyncio.sleep(2)
+                        client.connect()
+                        is_mqtt_connected = True
+                        log_message("MQTT connected.")
+                        await subscribe_to_topics()
+                    except Exception as e:
+                        is_mqtt_connected = False
+                        log_message(f"Failed to connect to MQTT: {e}")
+                        await asyncio.sleep(15)
+                        continue
+                
+                try:
+                    client.check_msg()
+                except Exception as e:
+                    log_message(f"MQTT connection lost or check_msg failed: {e}")
+                    is_mqtt_connected = False
+                    try:
+                        client.disconnect()
+                    except:
+                        pass
+        except Exception as e:
+            log_message(f"Error in check_messages: {e}")
+            is_mqtt_connected = False
+            
         await asyncio.sleep(1)
         gc.collect()  # Run garbage collection to free up memory
-
-async def reconnect():
-    max_mqtt_retries = 5  # Try MQTT reconnections multiple times before giving up
-    mqtt_retry_delay = 2  # Start with a 2-second delay
-    mqtt_attempt_count = 0
-
-    log_message("Reconnecting to MQTT broker...")
-    while mqtt_attempt_count < max_mqtt_retries:
-        try:
-            # Disconnect MQTT client if still connected
-            try:
-                client.disconnect()
-            except Exception as e:
-                log_message(f"Error during MQTT disconnect: {e}")
-
-            await asyncio.sleep(5)  # Short delay before attempting to reconnect
-
-            # Reconnect to the MQTT broker
-            client.connect()
-            log_message("Reconnected to MQTT broker.")
-            await subscribe_to_topics()  # Re-subscribe to topics after reconnecting
-            return  # Exit on successful reconnection
-
-        except OSError as e:
-            log_message(f"Failed to reconnect to MQTT broker: {e}")
-            mqtt_attempt_count += 1
-            await asyncio.sleep(mqtt_retry_delay)
-
-            # Exponential backoff for MQTT retries
-            mqtt_retry_delay = min(mqtt_retry_delay * 2, 60)  # Cap retry delay at 60 seconds
-
-    log_message("Max MQTT reconnection attempts reached. Will continue running without MQTT.")
-    # Consider staying in Wi-Fi mode without MQTT if desired
-    return
 
 # New helper to monitor memory usage
 def monitor_memory():
@@ -896,7 +893,7 @@ def run_server():
 async def mqtt_ping_loop():
     while True:
         try:
-            if MQTT == 1:
+            if MQTT == 1 and is_mqtt_connected:
                 client.ping()
         except Exception as e:
             log_message(f"MQTT ping failed: {e}")
