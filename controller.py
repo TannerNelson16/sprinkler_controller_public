@@ -519,7 +519,7 @@ except (OSError, ValueError):
         ujson.dump(schedules, f)
     log_message("Created new schedules.json file")
 
-async def connect_to_wifi():
+async def connect_to_wifi(fallback_to_ap=True):
     max_wifi_attempts = 10
     retry_delay = 2
     attempt_count = 0
@@ -557,8 +557,11 @@ async def connect_to_wifi():
             attempt_count += 1
             await asyncio.sleep(retry_delay)
 
-    log_message('Failed to connect to Wi-Fi after all attempts. Entering AP mode as a last resort.')
-    enter_AP_mode() 
+    if fallback_to_ap:
+        log_message('Failed to connect to Wi-Fi after all attempts. Entering AP mode as a last resort.')
+        enter_AP_mode() 
+    else:
+        log_message('Failed to connect to Wi-Fi. Will retry in background...')
 
 @app.route("/api/time")
 def get_rtc_time(request):
@@ -899,6 +902,22 @@ async def mqtt_ping_loop():
             log_message(f"MQTT ping failed: {e}")
         await asyncio.sleep(20)
 
+async def wifi_monitor_loop():
+    while True:
+        try:
+            wifi = network.WLAN(network.STA_IF)
+            if not wifi.isconnected():
+                log_message("Wi-Fi connection lost! Attempting to reconnect...")
+                try:
+                    wifi.disconnect()
+                except:
+                    pass
+                await asyncio.sleep(2)
+                await connect_to_wifi(fallback_to_ap=False)
+        except Exception as e:
+            log_message(f"Error in wifi_monitor_loop: {e}")
+        await asyncio.sleep(30)
+
 async def main():
     if MQTT == 0:
         await main_without_mqtt()
@@ -911,7 +930,8 @@ async def main():
             sync_time(),
             check_schedules(),
             check_messages(),
-            mqtt_ping_loop()
+            mqtt_ping_loop(),
+            wifi_monitor_loop()
         )
     except Exception as e:
         log_message(f"Error in main loop: {e}")
@@ -926,7 +946,8 @@ async def main_without_mqtt():
         start_new_thread(run_server, ())
         await asyncio.gather(
             sync_time(),
-            check_schedules()
+            check_schedules(),
+            wifi_monitor_loop()
         )
     except Exception as e:
         log_message(f"Error found again. Restarting without MQTT or WIFI: {e}")
