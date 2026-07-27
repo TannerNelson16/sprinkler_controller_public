@@ -23,15 +23,19 @@ If you are interested in commercial licensing, please contact Tanner Nelson at [
 
 ## 📺 Web User Interface
 
-The controller hosts a responsive, dark-mode web console directly on the ESP32 chip (built using `uasyncio` and `microdot`), allowing for seamless management from any device on your local network.
+The controller hosts a responsive, dark-mode web console directly on the ESP32 chip, allowing for seamless management from any device on your local network.
 
 <p align="center">
-  <img src="attachments/sprinkler_controller_main.png" width="45%" alt="Main Dashboard">
-  <img src="attachments/sprinkler_controller_scheduler.png" width="45%" alt="Scheduler Interface">
+  <img src="attachments/Screenshot_1.png" width="45%" alt="Main Dashboard - Home">
+  <img src="attachments/Screenshot_2.png" width="45%" alt="Main Dashboard - Scheduler">
 </p>
 <p align="center">
-  <img src="attachments/sprinkler_controller_logs.png" width="45%" alt="Telemetry Logs">
-  <img src="attachments/sprinkler_controller_settings.png" width="45%" alt="Settings Panel">
+  <img src="attachments/Screenshot_3.png" width="45%" alt="Settings Configuration">
+  <img src="attachments/Screenshot_6.png" width="45%" alt="System Logs and Output">
+</p>
+<p align="center">
+  <img src="attachments/Screenshot_7.png" width="45%" alt="Home Assistant Integration Status">
+  <img src="attachments/Screenshot_8.png" width="45%" alt="Home Assistant Dashboard Control">
 </p>
 
 ---
@@ -53,13 +57,12 @@ The controller hosts a responsive, dark-mode web console directly on the ESP32 c
 The V2 architecture separates the high-voltage mains AC transformer from the low-voltage logic, featuring a sleek wall-mount casing with a magnetic quick-access faceplate.
 
 <p align="center">
-  <img src="attachments/V2_enclosure.png" width="48%" alt="V2 Enclosure Design">
-  <img src="attachments/pinout.png" width="48%" alt="Wiring Pinout Guide">
+  <img src="attachments/Product_1.jpg" width="48%" alt="New Enclosure Closed">
+  <img src="attachments/Product_2.jpg" width="48%" alt="New Enclosure Angle View">
 </p>
-
 <p align="center">
-  <img src="attachments/SC_open.jpg" width="48%" alt="Internal Layout">
-  <img src="attachments/SC_closed.jpg" width="48%" alt="Final Product Mounted">
+  <img src="attachments/Product_3.jpg" width="48%" alt="New Enclosure Wall Mounted">
+  <img src="attachments/Product_4.jpg" width="48%" alt="New Enclosure Side Profile">
 </p>
 
 ---
@@ -84,7 +87,7 @@ Ensure your ESP32 board is connected to your computer via USB.
    ```
 
 ### 2. Upload Firmware Files to the Board
-Upload all project files to the root directory of the ESP32 using `ampy` or `mpremote`:
+Upload all project files to the root directory of the ESP32 using `ampy` or `mremote`:
 ```bash
 pip install adafruit-ampy
 
