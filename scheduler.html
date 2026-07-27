@@ -1,482 +1,902 @@
+<!--
+Intellidwell Sprinkler Controller Firmware
+Copyright (C) 2025 Tanner Nelson
+
+Licensed under GPLv3 with additional non-commercial hardware restrictions.
+See LICENSE for details.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scheduler</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Scheduler - Sprinkler Controller</title>
 <style>
+:root {
+  --bg-color: #0b0f19;
+  --card-bg: rgba(30, 41, 59, 0.7);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-blue: #3b82f6;
+  --accent-emerald: #10b981;
+  --accent-red: #ef4444;
+  --accent-amber: #f59e0b;
+}
+
 body {
-  background-color: #333;
-  color: white;
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 15px 15px 90px 15px; /* bottom padding for tab bar */
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
 }
+
+.container {
+  width: 100%;
+  max-width: 600px;
+}
+
 h1 {
-  color: #FFD700;
+  margin: 10px 0 20px 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
+
+#currentDateTime {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background-color: rgba(30, 41, 59, 0.4);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.zone-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.zone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 15px;
+}
+
+.zone-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Switch */
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 34px;
-  margin: 10px;
- } 
+  width: 46px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
-  border-radius: 34px;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #334155;
+  transition: .25s;
+  border-radius: 30px;
 }
+
 .slider:before {
   position: absolute;
   content: "";
-  height: 26px;
-  width: 26px;
+  height: 18px;
+  width: 18px;
   left: 4px;
   bottom: 4px;
   background-color: white;
-  transition: .4s;
+  transition: .25s;
   border-radius: 50%;
 }
+
 input:checked + .slider {
-  background-color: #2196F3;
+  background-color: var(--accent-emerald);
 }
+
 input:checked + .slider:before {
-  transform: translateX(26px);
+  transform: translateX(20px);
 }
-label {
-  font-weight: bold;
-  margin-right: 10px;
+
+/* List of schedules */
+.schedules-list {
+  margin-bottom: 15px;
 }
-input[type="checkbox"], input[type="time"] {
-  margin: 5px;
+
+.schedule-item {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-button {
-  background-color: #2196F3;
-  border: none;
-  color: white;
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
-  border-radius: 12px;
-}
-.relay-scheduler {
+
+.schedule-details {
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #FFF;
+  gap: 6px;
 }
 
-.form-row {
+.schedule-days {
   display: flex;
+  gap: 4px;
   flex-wrap: wrap;
-  align-items: center;
 }
 
-label {
+.day-badge-small {
+  background-color: #334155;
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.schedule-time {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.schedule-actions {
   display: flex;
   align-items: center;
-  margin-right: 10px;
+  gap: 24px; /* Increased gap to prevent accidental clicks */
+}
+
+/* Add schedule form */
+.add-schedule-form {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 15px;
+  margin-top: 15px;
+}
+
+.form-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.day-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.day-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #334155;
+  color: var(--text-secondary);
   font-weight: bold;
-  margin-bottom: 5px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
 }
 
-input[type="checkbox"], input[type="time"] {
-  margin: 5px;
-  margin-right: 3px;
+.day-badge:hover {
+  background-color: #475569;
 }
 
-/* Style adjustments to force new line */
-label.break-line {
-  flex-basis: 100%; /* Forces the label to take full width */
-  margin-top: 10px; /* Add some spacing before the element */
+.day-badge.active {
+  background-color: var(--accent-blue);
+  color: white;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
-.time-label {
-  flex-basis: 100%; /* Forces the label to take full width */
+.time-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
 }
 
-@media (max-width: 600px) {
-  label {
-    width: auto; /* Ensure labels fit content on small screens */
-  }
-  
-  input[type="time"] {
-    width: 100%; /* Full width for better accessibility */
-  }
-  
-  button {
-    width: 100%;
-    padding: 12px;
-  }
+.time-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
 }
+
+.time-input-group label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+input[type="time"] {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="time"]:focus {
+  border-color: var(--accent-blue);
+}
+
+.btn {
+  border: none;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-add {
+  background-color: var(--accent-blue);
+  color: white;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.btn-add:hover {
+  background-color: #2563eb;
+}
+
+.btn-danger {
+  background-color: var(--accent-red);
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.no-schedules {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Navigation Sticky Tab Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  background-color: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 8px 0;
+  flex: 1;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  color: var(--accent-blue);
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+  fill: currentColor;
+}
+
+body.sending-command #zonesContainer {
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.15s ease-in-out;
+}
+
 </style>
 </head>
-<body onload="initDateTime()">
-<h1>Scheduler</h1>
-<div id="currentDateTime">Loading date and time...</div>
-<div>
+<body onload="init()">
+<div class="container">
+  <h1>Scheduler</h1>
 
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 0)" data-index="0" {{ 'checked' if schedules[0].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 1</h2>
-    <form id="form1">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(0, document.getElementById('form1'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule1">
-        <strong>Current Schedule:</strong> <span id="currentInfo1"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 1)" data-index="1" {{ 'checked' if schedules[1].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 2</h2>
-    <form id="form2">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(1, document.getElementById('form2'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule2">
-        <strong>Current Schedule:</strong> <span id="currentInfo2"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 2)" data-index="2" {{ 'checked' if schedules[2].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 3</h2>
-    <form id="form3">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(2, document.getElementById('form3'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule3">
-        <strong>Current Schedule:</strong> <span id="currentInfo3"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 3)" data-index="3" {{ 'checked' if schedules[3].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 4</h2>
-    <form id="form4">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(3, document.getElementById('form4'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule4">
-        <strong>Current Schedule:</strong> <span id="currentInfo4"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 4)" data-index="4" {{ 'checked' if schedules[4].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 5</h2>
-    <form id="form5">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(4, document.getElementById('form5'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule5">
-        <strong>Current Schedule:</strong> <span id="currentInfo5"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 5)" data-index="5" {{ 'checked' if schedules[5].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 6</h2>
-    <form id="form6">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(5, document.getElementById('form6'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule6">
-        <strong>Current Schedule:</strong> <span id="currentInfo6"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 6)" data-index="6" {{ 'checked' if schedules[6].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 7</h2>
-    <form id="form7">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(6, document.getElementById('form7'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule7">
-        <strong>Current Schedule:</strong> <span id="currentInfo7"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 7)" data-index="7" {{ 'checked' if schedules[7].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 8</h2>
-    <form id="form8">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(7, document.getElementById('form8'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule8">
-        <strong>Current Schedule:</strong> <span id="currentInfo8"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 8)" data-index="8" {{ 'checked' if schedules[8].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 9</h2>
-    <form id="form9">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(8, document.getElementById('form9'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule9">
-        <strong>Current Schedule:</strong> <span id="currentInfo9"></span>
-    </div>
-  </div>
-  <div class="relay-scheduler" style="position: relative; padding-right: 70px;">
-    <label class="switch" style="position: absolute; right: 10px; top: 10px;">
-        <input type="checkbox" onchange="toggleSchedule(this, 9)" data-index="9" {{ 'checked' if schedules[9].enabled }}>
-        <span class="slider"></span>
-    </label>
-    <h2>Zone 10</h2>
-    <form id="form10">
-      Days:
-      <input type="checkbox" name="day" value="Mon">Mon
-      <input type="checkbox" name="day" value="Tue">Tue
-      <input type="checkbox" name="day" value="Wed">Wed
-      <input type="checkbox" name="day" value="Thu">Thu
-      <input type="checkbox" name="day" value="Fri">Fri
-      <input type="checkbox" name="day" value="Sat">Sat
-      <input type="checkbox" name="day" value="Sun">Sun<br>
-      Turn On Time: <input type="time" name="onTime">
-      Turn Off Time: <input type="time" name="offTime"><br>
-      <button type="button" onclick="setSchedule(9, document.getElementById('form10'))">Set Schedule</button>
-    </form>
-    <div id="currentSchedule10">
-        <strong>Current Schedule:</strong> <span id="currentInfo10"></span>
-    </div>
+  <div id="currentDateTime">Loading date and time...</div>
+
+  <div id="zonesContainer">
+    <!-- Rendered dynamically -->
   </div>
 </div>
 
+<!-- Bottom Navigation Bar -->
+<div class="bottom-nav">
+  <a href="/" class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+    </svg>
+    Dashboard
+  </a>
+  <a href="/scheduler" class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+    </svg>
+    Scheduler
+  </a>
+  <a href="/logs-page" class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+    </svg>
+    Logs
+  </a>
+  <a href="/settings" class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+    </svg>
+    Settings
+  </a>
+</div>
 
 <script>
+// Request queuing system to prevent ESP32 crash due to concurrent socket exhaustion
+const requestQueue = [];
+let queueProcessing = false;
+
+function safeFetch(url, options = {}, isStatusPoll = false) {
+    return new Promise((resolve, reject) => {
+        if (isStatusPoll && requestQueue.some(item => item.isStatusPoll)) {
+            resolve({ ok: true, json: () => Promise.resolve({}) });
+            return;
+        }
+        requestQueue.push({ url, options, resolve, reject, isStatusPoll });
+        processRequestQueue();
+    });
+}
+
+function processRequestQueue() {
+    if (queueProcessing || requestQueue.length === 0) return;
+    queueProcessing = true;
+
+    const { url, options, resolve, reject, isStatusPoll } = requestQueue.shift();
+    if (!isStatusPoll) {
+        document.body.classList.add('sending-command');
+    }
+
+    fetch(url, options)
+        .then(res => {
+            resolve(res);
+        })
+        .catch(err => {
+            reject(err);
+        })
+        .finally(() => {
+            queueProcessing = false;
+            const hasMoreCommands = requestQueue.some(item => !item.isStatusPoll);
+            if (!hasMoreCommands) {
+                document.body.classList.remove('sending-command');
+            }
+            setTimeout(processRequestQueue, 150);
+        });
+}
+
 function pad(num) {
     return num.toString().padStart(2, '0');
 }
 
 function initDateTime() {
-    async function updateClock() {
-        try {
-            const res = await fetch('/api/time');
-            const data = await res.json();
+    return new Promise((resolve) => {
+        let localTime = null;
 
-            let hour = data.hour;
-            const minute = pad(data.minute);
-            const second = pad(data.second);
+        async function updateClock() {
+            try {
+                const res = await safeFetch('/api/time', {}, true);
+                const data = await res.json();
+
+                // Month is 1-based in RTC, but 0-based in JS Date
+                localTime = new Date(data.year, data.month - 1, data.day, data.hour, data.minute, data.second);
+                renderClock();
+                resolve();
+            } catch (e) {
+                document.getElementById('currentDateTime').innerHTML = 'Time unavailable';
+                resolve(); // resolve anyway to not block initialization
+            }
+        }
+
+        function renderClock() {
+            if (!localTime) return;
+            let hour = localTime.getHours();
+            const minute = pad(localTime.getMinutes());
+            const second = pad(localTime.getSeconds());
             const ampm = hour >= 12 ? 'PM' : 'AM';
 
             hour = hour % 12;
             hour = hour ? hour : 12; // convert 0 to 12
 
-            const formatted = `${pad(data.month)}/${pad(data.day)}/${data.year} ` +
+            const formatted = `${pad(localTime.getMonth() + 1)}/${pad(localTime.getDate())}/${localTime.getFullYear()} ` +
                               `${pad(hour)}:${minute}:${second} ${ampm}`;
 
             document.getElementById('currentDateTime').innerHTML = formatted;
-        } catch (e) {
-            document.getElementById('currentDateTime').innerHTML = 'Time unavailable';
+        }
+
+        updateClock();
+
+        // Increment clock locally every second
+        setInterval(() => {
+            if (localTime) {
+                localTime.setTime(localTime.getTime() + 1000);
+                renderClock();
+            }
+        }, 1000);
+
+        // Periodically refresh from server (e.g. every 60 seconds) to prevent drift
+        setInterval(updateClock, 60000);
+    });
+}
+
+function formatTime24To12(time24) {
+    if (!time24 || typeof time24 !== 'string') return "Not set";
+    const parts = time24.split(':');
+    if (parts.length < 2) return time24;
+    const [hours, minutes] = parts;
+    const hoursNum = parseInt(hours);
+    if (isNaN(hoursNum)) return time24;
+    const hours12 = ((hoursNum % 12) || 12);
+    const amPm = hoursNum >= 12 ? 'PM' : 'AM';
+    return `${hours12}:${minutes} ${amPm}`;
+}
+
+function toggleDayBadge(element) {
+    element.classList.toggle('active');
+}
+
+let currentSettings = null;
+let currentSchedules = null;
+
+function timeToMins(t) {
+    if (!t) return 0;
+    const [h, m] = t.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+}
+
+const DAYS_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+function getNextDay(day) {
+    const idx = DAYS_ORDER.indexOf(day);
+    return DAYS_ORDER[(idx + 1) % 7];
+}
+
+function expandSchedule(sched) {
+    const intervals = [];
+    const start = timeToMins(sched.onTime);
+    const end = timeToMins(sched.offTime);
+    const days = sched.days || [];
+    
+    days.forEach(day => {
+        if (start < end) {
+            intervals.push({ day, start, end });
+        } else {
+            // crosses midnight
+            intervals.push({ day, start, end: 1440 });
+            intervals.push({ day: getNextDay(day), start: 0, end });
+        }
+    });
+    return intervals;
+}
+
+function checkOverlap(int1, int2) {
+    if (int1.day !== int2.day) return false;
+    return Math.max(int1.start, int2.start) < Math.min(int1.end, int2.end);
+}
+
+async function init() {
+    await initDateTime();
+    await fetchSchedules();
+}
+
+async function fetchSchedules() {
+    try {
+        const settingsRes = await safeFetch('/get-settings');
+        const settings = await settingsRes.json();
+
+        const schedulesRes = await safeFetch('/get-schedules');
+        const data = await schedulesRes.json();
+
+        currentSettings = settings;
+        currentSchedules = data;
+        const zoneNames = (settings && settings.zone_names) || [];
+        const masterValve = (settings && settings.master_valve !== undefined) ? parseInt(settings.master_valve) : -1;
+        const container = document.getElementById('zonesContainer');
+        container.innerHTML = '';
+
+        if (!Array.isArray(data)) {
+            console.error("Schedules data is not an array:", data);
+            container.innerHTML = '<div style="color: var(--accent-red); font-weight: bold; padding: 20px;">Error loading schedules: invalid response format.</div>';
+            return;
+        }
+
+        data.forEach((zoneConfig, index) => {
+            const zoneNum = index + 1;
+            const defaultName = `Zone ${zoneNum}`;
+            const zoneName = zoneNames[index] || defaultName;
+            
+            const isZoneEnabled = zoneConfig ? zoneConfig.enabled : false;
+            const schedulesList = (zoneConfig && zoneConfig.schedules) || [];
+
+            const card = document.createElement('div');
+            card.className = 'zone-card';
+
+            if (index === masterValve) {
+                // Render disabled view for master valve
+                card.innerHTML = `
+                    <div class="zone-header" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                        <h2 class="zone-title">${zoneName} (Master Valve)</h2>
+                    </div>
+                    <div style="margin-top: 15px; color: var(--accent-amber); font-weight: 600; font-style: italic; font-size: 0.9rem;">
+                        Schedules are disabled for this zone because it is configured as the Master Valve.
+                    </div>
+                `;
+                container.appendChild(card);
+                return;
+            }
+
+            // Zone Header
+            let headerHTML = `
+                <div class="zone-header">
+                    <h2 class="zone-title">${zoneName}</h2>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary)">Active:</span>
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleZoneSchedule(${index}, this)" ${isZoneEnabled ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            `;
+
+            // Schedules List
+            let schedulesHTML = '<div class="schedules-list">';
+            if (schedulesList.length === 0) {
+                schedulesHTML += '<div class="no-schedules">No schedules configured for this zone.</div>';
+            } else {
+                schedulesList.forEach((sched) => {
+                    if (!sched) return;
+                    const days = Array.isArray(sched.days) ? sched.days : [];
+                    const daysStr = days.map(d => `<span class="day-badge-small">${d}</span>`).join(' ');
+                    schedulesHTML += `
+                        <div class="schedule-item">
+                            <div class="schedule-details">
+                                <div class="schedule-days">${daysStr}</div>
+                                <div class="schedule-time">${formatTime24To12(sched.onTime)} - ${formatTime24To12(sched.offTime)}</div>
+                            </div>
+                            <div class="schedule-actions">
+                                <label class="switch" style="width: 40px; height: 22px;">
+                                    <input type="checkbox" onchange="toggleScheduleItem(${index}, '${sched.id || ''}', this)" ${sched.enabled ? 'checked' : ''}>
+                                    <span class="slider" style="border-radius: 24px;"></span>
+                                </label>
+                                <button class="btn" style="background-color: var(--accent-blue); color: white; padding: 6px 12px; font-size: 0.8rem;" onclick="editScheduleItem(${index}, '${sched.id || ''}')">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteScheduleItem(${index}, '${sched.id || ''}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            schedulesHTML += '</div>';
+
+            // Add Schedule Form
+            let formHTML = `
+                <div class="add-schedule-form">
+                    <div class="form-title">Add New Schedule</div>
+                    <div class="day-selector" id="days-zone-${index}">
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Mon">M</span>
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Tue">T</span>
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Wed">W</span>
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Thu">T</span>
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Fri">F</span>
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Sat">S</span>
+                        <span class="day-badge" onclick="toggleDayBadge(this)" data-day="Sun">S</span>
+                    </div>
+                    <div class="time-selector">
+                        <div class="time-input-group">
+                            <label>Start Time</label>
+                            <input type="time" id="onTime-zone-${index}">
+                        </div>
+                        <div class="time-input-group">
+                            <label>End Time</label>
+                            <input type="time" id="offTime-zone-${index}">
+                        </div>
+                    </div>
+                    <button class="btn btn-add" id="action-btn-zone-${index}" onclick="addScheduleItem(${index})">Add Schedule</button>
+                </div>
+            `;
+
+            card.innerHTML = headerHTML + schedulesHTML + formHTML;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Error fetching schedules:", error);
+    }
+}
+
+function toggleZoneSchedule(zoneIndex, element) {
+    const isEnabled = element.checked;
+    safeFetch(`/toggle-schedule/${zoneIndex}/${isEnabled}`)
+    .then(response => {
+        if (response.ok) {
+            fetchSchedules();
+        } else {
+            alert("Failed to toggle zone schedule");
+            element.checked = !isEnabled;
+        }
+    })
+    .catch(err => {
+        console.error("Error toggling zone schedule:", err);
+        element.checked = !isEnabled;
+    });
+}
+
+function toggleScheduleItem(zoneIndex, schedId, element) {
+    const isEnabled = element.checked;
+    safeFetch(`/toggle-schedule-item/${zoneIndex}/${schedId}/${isEnabled}`, { method: 'POST' })
+    .then(response => {
+        if (response.ok) {
+            fetchSchedules();
+        } else {
+            alert("Failed to toggle schedule item");
+            element.checked = !isEnabled;
+        }
+    })
+    .catch(err => {
+        console.error("Error toggling schedule item:", err);
+        element.checked = !isEnabled;
+    });
+}
+
+function deleteScheduleItem(zoneIndex, schedId) {
+    if (confirm("Are you sure you want to delete this schedule?")) {
+        safeFetch(`/delete-schedule/${zoneIndex}/${schedId}`, { method: 'POST' })
+        .then(response => {
+            if (response.ok) {
+                fetchSchedules();
+            } else {
+                alert("Failed to delete schedule");
+            }
+        })
+        .catch(err => {
+            console.error("Error deleting schedule item:", err);
+        });
+    }
+}
+
+function addScheduleItem(zoneIndex) {
+    const daysContainer = document.getElementById(`days-zone-${zoneIndex}`);
+    const activeBadges = daysContainer.querySelectorAll('.day-badge.active');
+    const days = Array.from(activeBadges).map(b => b.getAttribute('data-day'));
+    
+    const onTime = document.getElementById(`onTime-zone-${zoneIndex}`).value;
+    const offTime = document.getElementById(`offTime-zone-${zoneIndex}`).value;
+
+    if (days.length === 0) {
+        alert("Please select at least one day.");
+        return;
+    }
+    if (!onTime || !offTime) {
+        alert("Please set both turn-on and turn-off times.");
+        return;
+    }
+
+    // 1. Duration check
+    const startMins = timeToMins(onTime);
+    const endMins = timeToMins(offTime);
+    let durationMinutes = 0;
+    if (startMins < endMins) {
+        durationMinutes = endMins - startMins;
+    } else {
+        durationMinutes = (1440 - startMins) + endMins;
+    }
+
+    if (durationMinutes > 60) {
+        const hrs = Math.floor(durationMinutes / 60);
+        const mins = durationMinutes % 60;
+        const durationStr = mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+        const confirmMsg = `Warning: The selected schedule runs for more than an hour (${durationStr}). Running sprinklers for this long can over-water or waste resources.\n\nDo you still want to save it?`;
+        if (!confirm(confirmMsg)) {
+            return; // Abort
         }
     }
 
-    updateClock(); // call immediately on page load
-    setInterval(updateClock, 1000); // update every second
-}
+    const isEditing = !!editingSchedIds[zoneIndex];
 
+    // 2. Overlap check
+    const candidateSched = { days, onTime, offTime };
+    const candidateIntervals = expandSchedule(candidateSched);
+    let overlappingZone = null;
+    let overlappingSched = null;
 
-function setSchedule(pin, form) {
-    const formData = new FormData(form);
+    if (currentSchedules && currentSettings) {
+        const zoneNames = currentSettings.zone_names || [];
+        currentSchedules.forEach((zoneConfig, zIdx) => {
+            const zName = zoneNames[zIdx] || `Zone ${zIdx + 1}`;
+            const sList = zoneConfig.schedules || [];
+            sList.forEach(sched => {
+                if (!sched || !sched.enabled) return;
+                if (isEditing && sched.id === editingSchedIds[zoneIndex]) return; // Skip overlap check against itself
+                const existingIntervals = expandSchedule(sched);
+                existingIntervals.forEach(eInt => {
+                    candidateIntervals.forEach(cInt => {
+                        if (checkOverlap(eInt, cInt)) {
+                            overlappingZone = zName;
+                            overlappingSched = sched;
+                        }
+                    });
+                });
+            });
+        });
+    }
 
+    if (overlappingZone && overlappingSched) {
+        const confirmMsg = `Warning: This schedule overlaps with an active schedule in ${overlappingZone} (${overlappingSched.days.join(', ')} from ${formatTime24To12(overlappingSched.onTime)} to ${formatTime24To12(overlappingSched.offTime)}).\n\nDo you still want to save it?`;
+        if (!confirm(confirmMsg)) {
+            return; // Abort
+        }
+    }
 
-    const data = new URLSearchParams(formData).toString();
-    fetch(`/set-schedule/${pin}`, {
+    const url = isEditing ? `/edit-schedule/${zoneIndex}/${editingSchedIds[zoneIndex]}` : `/add-schedule/${zoneIndex}`;
+
+    const payload = {
+        days: days,
+        onTime: onTime,
+        offTime: offTime
+    };
+
+    safeFetch(url, {
         method: 'POST',
-        body: data,
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        if (response.ok) {
+            if (isEditing) {
+                delete editingSchedIds[zoneIndex];
+                const cancelBtn = document.getElementById(`cancel-edit-zone-${zoneIndex}`);
+                if (cancelBtn) cancelBtn.remove();
+            }
+            // Reset fields
+            document.getElementById(`onTime-zone-${zoneIndex}`).value = '';
+            document.getElementById(`offTime-zone-${zoneIndex}`).value = '';
+            daysContainer.querySelectorAll('.day-badge.active').forEach(b => b.classList.remove('active'));
+            fetchSchedules();
+        } else {
+            alert(isEditing ? "Failed to update schedule" : "Failed to add schedule");
         }
     })
-    .then(response => response.text())
-    .then(data => {
-        alert(data);
-        updateScheduleDisplay(pin, form);
-    });
-}
-function formatTime24To12(time24) {
-    if (!time24) return "Not set";  // Handle unset times
-    const [hours, minutes] = time24.split(':');
-    const hours12 = ((hours % 12) || 12);  // Convert hour component
-    const amPm = hours >= 12 ? 'PM' : 'AM';
-    return `${hours12}:${minutes} ${amPm}`;
-}
-function updateScheduleDisplay(pin, form) {
-    const formData = new FormData(form);
-    const daysArray = formData.getAll('day'); // Get all selected days
-    const days = daysArray.join(", ");
-    const onTime = formData.get('onTime');
-    const offTime = formData.get('offTime');
-
-    const scheduleInfo = `Days: ${days}, On: ${formatTime24To12(onTime)}, Off: ${formatTime24To12(offTime)}`;
-    document.getElementById('currentInfo' + (pin+1)).innerText = scheduleInfo;
-}
-function fetchSchedules() {
-    fetch('/get-schedules')
-    .then(response => response.json())
-    .then(data => {
-        console.log("Schedule data:", data);  // Check what data is received
-        data.forEach((schedule, index) => {
-            const relayIndex = index + 1; // Adjust index for 1-based ID in HTML
-            console.log(`Relay ${relayIndex} schedule:`, schedule);  // Debug each schedule
-            const days = schedule.days ? schedule.days.join(", ") : "No days set";
-            const onTime = formatTime24To12(schedule.onTime) || "Not set";
-            const offTime = formatTime24To12(schedule.offTime) || "Not set";            
-            const scheduleInfo = `Days: ${days}, On: ${onTime}, Off: ${offTime}`;
-            
-            // Update the current schedule display
-            const infoElement = document.getElementById('currentInfo' + relayIndex);
-            console.log(`Updating element:`, infoElement);  // Check if element is found
-            infoElement.innerText = scheduleInfo;
-        });
-    })
-    .catch(error => {
-        console.error("Error fetching schedules:", error);
+    .catch(err => {
+        console.error("Error saving schedule:", err);
     });
 }
 
+let editingSchedIds = {};
 
-function toggleSchedule(element, zone) {
-    const isEnabled = element.checked;
-    fetch(`/toggle-schedule/${zone}/${isEnabled}`)
-    .then(response => response.text())
-    .then(data => {
-        console.log(data);
-        publish_schedule_status(client, zone, isEnabled); // Add this line in the main.py appropriately
+function editScheduleItem(zoneIndex, schedId) {
+    if (!currentSchedules) return;
+    const zoneConfig = currentSchedules[zoneIndex];
+    if (!zoneConfig) return;
+    const sched = zoneConfig.schedules.find(s => s.id === schedId);
+    if (!sched) return;
+
+    editingSchedIds[zoneIndex] = schedId;
+
+    // Reset and set active badges
+    const daysContainer = document.getElementById(`days-zone-${zoneIndex}`);
+    daysContainer.querySelectorAll('.day-badge').forEach(b => {
+        const day = b.getAttribute('data-day');
+        if (sched.days && sched.days.includes(day)) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
     });
+
+    // Set time inputs
+    document.getElementById(`onTime-zone-${zoneIndex}`).value = sched.onTime || '';
+    document.getElementById(`offTime-zone-${zoneIndex}`).value = sched.offTime || '';
+
+    // Change button text and style
+    const btn = document.getElementById(`action-btn-zone-${zoneIndex}`);
+    btn.innerText = "Update Schedule";
+    
+    // Add a Cancel Edit button if not present
+    let cancelBtn = document.getElementById(`cancel-edit-zone-${zoneIndex}`);
+    if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = `cancel-edit-zone-${zoneIndex}`;
+        cancelBtn.className = "btn";
+        cancelBtn.style.backgroundColor = "#475569";
+        cancelBtn.style.color = "white";
+        cancelBtn.style.padding = "10px 16px";
+        cancelBtn.style.fontSize = "0.9rem";
+        cancelBtn.style.width = "100%";
+        cancelBtn.style.marginTop = "8px";
+        cancelBtn.innerText = "Cancel Edit";
+        cancelBtn.onclick = () => cancelEdit(zoneIndex);
+        btn.parentNode.appendChild(cancelBtn);
+    }
 }
 
+function cancelEdit(zoneIndex) {
+    delete editingSchedIds[zoneIndex];
+    
+    // Reset fields
+    const daysContainer = document.getElementById(`days-zone-${zoneIndex}`);
+    daysContainer.querySelectorAll('.day-badge').forEach(b => b.classList.remove('active'));
+    document.getElementById(`onTime-zone-${zoneIndex}`).value = '';
+    document.getElementById(`offTime-zone-${zoneIndex}`).value = '';
 
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/get-schedules')
-    .then(response => response.json())
-    .then(schedules => {
-        schedules.forEach((schedule, index) => {
-            const toggle = document.querySelector(`input[data-index="${index}"][type='checkbox']`);
-            if (toggle) {
-                toggle.checked = schedule.enabled || false;  // Ensure false if undefined
-            }
-            updateScheduleDisplay(index); // Ensure UI is updated accordingly
-        });
-    });
-});
-document.addEventListener('DOMContentLoaded', fetchSchedules);
+    const btn = document.getElementById(`action-btn-zone-${zoneIndex}`);
+    btn.innerText = "Add Schedule";
+
+    const cancelBtn = document.getElementById(`cancel-edit-zone-${zoneIndex}`);
+    if (cancelBtn) {
+        cancelBtn.remove();
+    }
+}
 </script>
 </body>
 </html>

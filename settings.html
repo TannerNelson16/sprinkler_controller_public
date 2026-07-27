@@ -1,81 +1,401 @@
+<!--
+Intellidwell Sprinkler Controller Firmware
+Copyright (C) 2025 Tanner Nelson
+
+Licensed under GPLv3 with additional non-commercial hardware restrictions.
+See LICENSE for details.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Settings</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Settings - Sprinkler Controller</title>
 <style>
-    body {
-        background-color: #333;
-        color: white;
-        font-family: Arial, sans-serif;
-        padding: 20px;
-    }
-    label, input {
-        margin-bottom: 10px;
-    }
-    .disabled {
-        background-color: #555;
-    }
-    .styled-button {
-      background-color: #2196F3;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 16px;
-      margin: 10px 0;
-      cursor: pointer;
-      border-radius: 12px;
-      width: 100%;  /* Full-width button */
-    }
+:root {
+  --bg-color: #0b0f19;
+  --card-bg: rgba(30, 41, 59, 0.7);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-blue: #3b82f6;
+  --accent-emerald: #10b981;
+  --accent-red: #ef4444;
+  --accent-amber: #f59e0b;
+}
 
-    .styled-button:hover {
-      background-color: #1e88e5;  /* Darker color on hover */
-    }
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 15px 15px 90px 15px; /* bottom padding for tab bar */
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 600px;
+}
+
+h1 {
+  margin: 10px 0 20px 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus {
+  border-color: var(--accent-blue);
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Switch styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #334155;
+  transition: .25s;
+  border-radius: 30px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .25s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-blue);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+fieldset {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 20px;
+  background-color: rgba(0,0,0,0.1);
+}
+
+legend {
+  padding: 0 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+}
+
+.btn {
+  background-color: var(--accent-blue);
+  border: none;
+  color: white;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s;
+  margin-bottom: 10px;
+}
+
+.btn:hover {
+  background-color: #2563eb;
+}
+
+/* Navigation Sticky Tab Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  background-color: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 8px 0;
+  flex: 1;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  color: var(--accent-blue);
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+  fill: currentColor;
+}
+
 </style>
 </head>
 <body>
-<h1>Settings</h1>
+<div class="container">
+  <h1>Settings</h1>
 
-<form id="settingsForm">
-    <label for="ssid">Wi-Fi SSID:</label><br>
-    <input type="text" id="ssid" name="ssid"><br>
+  <div class="card">
+    <form id="settingsForm">
+      <div class="form-group">
+        <label for="ssid">Wi-Fi SSID</label>
+        <input type="text" id="ssid" name="ssid" placeholder="Enter Wi-Fi SSID">
+      </div>
 
-    <label for="wifi_password">Wi-Fi Password:</label><br>
-    <input type="password" id="wifi_password" name="wifi_password"><br><br>
+      <div class="form-group">
+        <label for="wifi_password">Wi-Fi Password</label>
+        <input type="password" id="wifi_password" name="wifi_password" placeholder="Enter Wi-Fi Password">
+      </div>
 
-    <label for="enable_mqtt">Enable MQTT:</label>
-    <input type="checkbox" id="enable_mqtt" name="mqtt_enabled" onclick="toggleMQTTFields()"><br><br>
+      <div class="checkbox-group">
+        <label class="switch">
+          <input type="checkbox" id="enable_mqtt" name="mqtt_enabled" onclick="toggleMQTTFields()">
+          <span class="slider"></span>
+        </label>
+        <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Enable MQTT Broker</span>
+      </div>
 
-    <fieldset id="mqtt_fields" disabled>
-        <label for="mqtt_server">MQTT Server IP:</label><br>
-        <input type="text" id="mqtt_server" name="mqtt_server"><br>
+      <fieldset id="mqtt_fields" disabled>
+        <legend>MQTT Broker</legend>
+        <div class="form-group">
+          <label for="mqtt_server">Broker IP Address</label>
+          <input type="text" id="mqtt_server" name="mqtt_server" placeholder="e.g. 192.168.1.50">
+        </div>
 
-        <label for="mqtt_username">MQTT Username:</label><br>
-        <input type="text" id="mqtt_username" name="mqtt_username"><br>
+        <div class="form-group">
+          <label for="mqtt_username">Broker Username</label>
+          <input type="text" id="mqtt_username" name="mqtt_username" placeholder="Optional">
+        </div>
 
-        <label for="mqtt_password">MQTT Password:</label><br>
-        <input type="password" id="mqtt_password" name="mqtt_password"><br><br>
-    </fieldset>
+        <div class="form-group">
+          <label for="mqtt_password">Broker Password</label>
+          <input type="password" id="mqtt_password" name="mqtt_password" placeholder="Optional">
+        </div>
+      </fieldset>
 
-    <label for="timezone">Time Zone:</label><br>
-    <select id="timezone" name="timezone">
-      <option value="-7" selected>Mountain Standard Time (MST)</option>
-      <option value="-8">Pacific Standard Time (PST)</option>
-      <option value="-6">Central Standard Time (CST)</option>
-      <option value="-5">Eastern Standard Time (EST)</option>
-      <option value="0">UTC</option>
-      <option value="1">Central European Time (CET)</option>
-      <option value="5.5">India Standard Time (IST)</option>
-      <option value="10">Australian Eastern Time (AET)</option>
-    </select><br><br>
-    <button type="button" class="styled-button" onclick="saveSettings()">Save Settings</button>
-    
+      <div class="form-group">
+        <label for="timezone">Time Zone</label>
+        <select id="timezone" name="timezone">
+          <option value="-7">Mountain Standard Time (MST)</option>
+          <option value="-8">Pacific Standard Time (PST)</option>
+          <option value="-6">Central Standard Time (CST)</option>
+          <option value="-5">Eastern Standard Time (EST)</option>
+          <option value="0">UTC</option>
+          <option value="1">Central European Time (CET)</option>
+          <option value="5.5">India Standard Time (IST)</option>
+          <option value="10">Australian Eastern Time (AET)</option>
+        </select>
+      </div>
 
+      <div class="form-group">
+        <label for="master_valve">Master Valve Relay</label>
+        <select id="master_valve" name="master_valve">
+          <option value="-1">None (Disabled)</option>
+          <option value="0">Relay 1 (Zone 1)</option>
+          <option value="1">Relay 2 (Zone 2)</option>
+          <option value="2">Relay 3 (Zone 3)</option>
+          <option value="3">Relay 4 (Zone 4)</option>
+          <option value="4">Relay 5 (Zone 5)</option>
+          <option value="5">Relay 6 (Zone 6)</option>
+          <option value="6">Relay 7 (Zone 7)</option>
+          <option value="7">Relay 8 (Zone 8)</option>
+          <option value="8">Relay 9 (Zone 9)</option>
+          <option value="9">Relay 10 (Zone 10)</option>
+        </select>
+      </div>
 
-</form>
+      <!-- Zone Custom Renaming -->
+      <fieldset>
+        <legend>Rename Zones</legend>
+        <div id="zoneNamesContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </fieldset>
+
+      <!-- Sequential Runs Configuration -->
+      <fieldset>
+        <legend>Sequential Runs</legend>
+        <div id="sequentialRunsContainer">
+          <!-- Rendered dynamically -->
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn" style="background-color: var(--accent-emerald); flex: 1; min-width: 140px; margin-bottom: 0;" onclick="addEmptySequentialRun()">Create New Run</button>
+          <button type="button" class="btn" style="background-color: var(--accent-blue); flex: 1; min-width: 140px; margin-bottom: 0;" onclick="saveOnlySequentialRuns()">Save Runs (No Restart)</button>
+        </div>
+      </fieldset>
+
+      <!-- Firmware Update -->
+      <fieldset>
+        <legend>Firmware Update</legend>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
+          Check and install the latest firmware updates directly from Intellidwell. The controller will automatically restart once finished.
+        </div>
+        
+        <div style="font-size: 0.85rem; margin-bottom: 15px; color: var(--text-secondary);">
+          Current Version: <span id="currentVersionLabel" style="font-weight: bold; color: var(--text-primary);">Loading...</span>
+        </div>
+
+        <div id="updateNotificationBanner" style="display: none; background-color: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-emerald); border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4;">
+          <span style="font-weight: bold; color: var(--accent-emerald);">✨ Update Available:</span>
+          <span id="newVersionMessage">A new firmware version is available.</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="update_server">Update Server URL</label>
+          <input type="text" id="update_server" placeholder="https://www.intellidwell.net">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="otaVersionSelect">Version</label>
+          <select id="otaVersionSelect">
+            <option value="stable" data-channel="stable">Stable Release (Latest)</option>
+            <option value="deprecated" data-channel="deprecated">Deprecated Version (Latest)</option>
+          </select>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+          <button type="button" id="otaCheckBtn" class="btn" style="background-color: var(--accent-blue); margin-bottom: 0;" onclick="checkForUpdates()">Check for Updates</button>
+          <button type="button" id="otaStartBtn" class="btn" style="background-color: var(--accent-emerald); margin-bottom: 0;" onclick="triggerOnlineUpdate(event)">Install Selected Version</button>
+        </div>
+        
+        <div id="otaProgressWrapper" style="display: none; margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+            <span id="otaProgressStatus" style="color: var(--text-secondary);">Initializing...</span>
+            <span id="otaProgressPercent" style="font-weight: bold; color: var(--accent-emerald);">0%</span>
+          </div>
+          <div style="width: 100%; height: 10px; background-color: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--border-color);">
+            <div id="otaProgressBar" style="width: 0%; height: 100%; background-color: var(--accent-emerald); transition: width 0.2s;"></div>
+          </div>
+          <label style="margin-bottom: 5px;">Installation Logs</label>
+          <div id="otaLogConsole" style="background: rgba(0, 0, 0, 0.4); color: #39FF14; font-family: monospace; font-size: 0.75rem; padding: 10px; border-radius: 6px; max-height: 140px; overflow-y: auto; white-space: pre-wrap; border: 1px solid var(--border-color); line-height: 1.4; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);"></div>
+        </div>
+      </fieldset>
+
+      <button type="button" class="btn" onclick="saveSettings()">Save Settings</button>
+    </form>
+  </div>
+</div>
+
+<!-- Bottom Navigation Bar -->
+<div class="bottom-nav">
+  <a href="/" class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+    </svg>
+    Dashboard
+  </a>
+  <a href="/scheduler" class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+    </svg>
+    Scheduler
+  </a>
+  <a href="/logs-page" class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+    </svg>
+    Logs
+  </a>
+  <a href="/settings" class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 24 24">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+    </svg>
+    Settings
+  </a>
+</div>
 
 <script>
 function toggleMQTTFields() {
@@ -84,16 +404,406 @@ function toggleMQTTFields() {
     mqttFields.disabled = !mqttEnabled;
 }
 
-function saveSettings() {
-    const formData = new FormData(document.getElementById('settingsForm'));
-    const jsonData = {};
-    formData.forEach((value, key) => {
-        jsonData[key] = value;
-    });
+let currentSettingsData = null;
+let localFirmwareVersion = "0.0.0-dev";
 
-    // Add the manually-handled values *after* the form data is parsed
-    jsonData['mqtt_enabled'] = document.getElementById('enable_mqtt').checked ? 1 : 0;
-    jsonData['timezone'] = document.getElementById('timezone').value;
+let defaultServer = 'https://www.intellidwell.net';
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '5856') {
+    defaultServer = window.location.origin;
+}
+
+function isNewerVersion(latest, current) {
+    const partsL = latest.split('.').map(Number);
+    const partsC = current.split('.').map(Number);
+    for (let i = 0; i < Math.max(partsL.length, partsC.length); i++) {
+        const valL = partsL[i] || 0;
+        const valC = partsC[i] || 0;
+        if (valL !== valC) {
+            return valL > valC;
+        }
+    }
+    return false;
+}
+
+async function loadFirmwareVersions(updateServer) {
+    const host = updateServer || defaultServer;
+    const res = await fetch(host + '/api/firmware-versions');
+    if (!res.ok) {
+        throw new Error("HTTP Status " + res.status);
+    }
+    const data = await res.json();
+    
+    const select = document.getElementById('otaVersionSelect');
+    if (select) {
+        select.innerHTML = '';
+        
+        const allVersions = [];
+        if (data.stable) {
+            data.stable.forEach(v => {
+                allVersions.push({ ...v, channel: 'stable', label: `Stable Version ${v.version} - ${v.message} (${v.date})` });
+            });
+        }
+        if (data.deprecated) {
+            data.deprecated.forEach(v => {
+                allVersions.push({ ...v, channel: 'deprecated', label: `Deprecated Version ${v.version} - ${v.message} (${v.date})` });
+            });
+        }
+        
+        allVersions.sort((a, b) => {
+            const partsA = a.version.split('.').map(Number);
+            const partsB = b.version.split('.').map(Number);
+            for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+                const valA = partsA[i] || 0;
+                const valB = partsB[i] || 0;
+                if (valA !== valB) {
+                    return valB - valA;
+                }
+            }
+            return 0;
+        });
+        
+        allVersions.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.version;
+            opt.setAttribute('data-channel', v.channel);
+            opt.textContent = v.label;
+            select.appendChild(opt);
+        });
+    }
+    return data;
+}
+
+async function checkForUpdates() {
+    const checkBtn = document.getElementById('otaCheckBtn');
+    if (!checkBtn) return;
+    checkBtn.disabled = true;
+    checkBtn.innerText = "Checking...";
+    
+    const serverInput = document.getElementById('update_server');
+    let updateServer = serverInput ? serverInput.value.trim() : defaultServer;
+    if (!updateServer) updateServer = defaultServer;
+    
+    try {
+        const data = await loadFirmwareVersions(updateServer);
+        
+        const isStable = localFirmwareVersion.startsWith('2.');
+        const channel = isStable ? 'stable' : 'deprecated';
+        const versionsList = data[channel] || [];
+        
+        if (versionsList.length === 0) {
+            alert("No firmware versions found on the server for this channel.");
+            return;
+        }
+        
+        const latest = versionsList[0];
+        
+        if (isNewerVersion(latest.version, localFirmwareVersion)) {
+            const banner = document.getElementById('updateNotificationBanner');
+            const msg = document.getElementById('newVersionMessage');
+            if (banner && msg) {
+                msg.innerHTML = `Version <strong>${latest.version}</strong> is available (Released: ${latest.date}).<br><em>"${latest.message}"</em>`;
+                banner.style.display = "block";
+            }
+            
+            const select = document.getElementById('otaVersionSelect');
+            if (select) {
+                select.value = latest.version;
+            }
+            
+            alert(`A new update is available: Version ${latest.version}!`);
+        } else {
+            alert(`Your firmware is up to date (Version ${localFirmwareVersion}).`);
+        }
+    } catch (err) {
+        alert("Failed to check for updates: " + err.message);
+    } finally {
+        checkBtn.disabled = false;
+        checkBtn.innerText = "Check for Updates";
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/get-settings')
+        .then(response => response.json())
+        .then(data => {
+            currentSettingsData = data;
+            localFirmwareVersion = data.firmware_version || "0.0.0-dev";
+            const currentLabel = document.getElementById('currentVersionLabel');
+            if (currentLabel) {
+                currentLabel.innerText = localFirmwareVersion;
+            }
+            const serverVal = data.update_server || defaultServer;
+            document.getElementById('update_server').value = serverVal;
+            document.getElementById('ssid').value = data.ssid || '';
+            document.getElementById('wifi_password').value = data.wifi_password || '';
+            document.getElementById('enable_mqtt').checked = data.mqtt_enabled === 1;
+            document.getElementById('mqtt_server').value = data.mqtt_server || '';
+            document.getElementById('mqtt_username').value = data.mqtt_username || '';
+            document.getElementById('mqtt_password').value = data.mqtt_password || '';
+            
+            if (data.timezone !== undefined) {
+                document.getElementById('timezone').value = data.timezone;
+            }
+            if (data.master_valve !== undefined) {
+                document.getElementById('master_valve').value = data.master_valve;
+            }
+            toggleMQTTFields();
+
+            // Populate custom zone name inputs dynamically
+            const zoneNamesContainer = document.getElementById('zoneNamesContainer');
+            zoneNamesContainer.innerHTML = '';
+            const zoneNames = data.zone_names || [];
+            for (let i = 0; i < 10; i++) {
+                const name = zoneNames[i] || `Zone ${i+1}`;
+                zoneNamesContainer.innerHTML += `
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="zone_name_${i}">Zone ${i+1} Custom Name</label>
+                        <input type="text" id="zone_name_${i}" class="zone-name-input" placeholder="Zone ${i+1}" value="${name}">
+                    </div>
+                `;
+            }
+
+            renderSequentialRuns();
+
+            // Re-render sequential runs if master valve changes (to remove the option)
+            document.getElementById('master_valve').onchange = () => {
+                saveSequentialRunsInputs();
+                renderSequentialRuns();
+            };
+        })
+        .catch(error => console.error('Error fetching settings:', error));
+});
+
+function buildZoneOptions(selectedPin) {
+    const masterValve = parseInt(document.getElementById('master_valve').value);
+    let html = '';
+    for (let i = 0; i < 10; i++) {
+        if (i === masterValve) continue;
+        const defaultName = `Zone ${i + 1}`;
+        let name = defaultName;
+        const input = document.getElementById(`zone_name_${i}`);
+        if (input) {
+            name = input.value || defaultName;
+        } else if (currentSettingsData && currentSettingsData.zone_names) {
+            name = currentSettingsData.zone_names[i] || defaultName;
+        }
+        html += `<option value="${i}" ${i === parseInt(selectedPin) ? 'selected' : ''}>${name}</option>`;
+    }
+    return html;
+}
+
+function renderSequentialRuns() {
+    const container = document.getElementById('sequentialRunsContainer');
+    container.innerHTML = '';
+    
+    const runs = (currentSettingsData && currentSettingsData.sequential_runs) || [];
+    if (runs.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; font-size: 0.9rem; margin-bottom: 15px;">No sequential runs configured.</div>';
+        return;
+    }
+    
+    runs.forEach((run, runIdx) => {
+        const runBox = document.createElement('div');
+        runBox.style.border = '1px solid var(--border-color)';
+        runBox.style.borderRadius = '10px';
+        runBox.style.padding = '12px';
+        runBox.style.marginBottom = '15px';
+        runBox.style.backgroundColor = 'rgba(255,255,255,0.02)';
+        
+        let stepsHTML = '';
+        const steps = run.steps || [];
+        
+        steps.forEach((step, stepIdx) => {
+            stepsHTML += `
+                <div class="run-step-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                    <select class="step-zone-select" style="flex: 2; padding: 8px; font-size: 0.85rem;" data-run="${runIdx}" data-step="${stepIdx}">
+                        ${buildZoneOptions(step.pin)}
+                    </select>
+                    <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 6px;">
+                        <input type="number" class="step-duration-input" value="${step.duration_mins}" min="1" max="120" style="width: 100%; border: none; background: transparent; color: white; text-align: center; font-size: 0.85rem; font-weight: bold; outline: none;" data-run="${runIdx}" data-step="${stepIdx}">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); margin-right: 2px;">m</span>
+                    </div>
+                    <button type="button" class="btn" style="width: auto; padding: 8px 12px; margin-bottom: 0; font-size: 0.8rem; background-color: var(--accent-red);" onclick="deleteStep(${runIdx}, ${stepIdx})">Delete</button>
+                </div>
+            `;
+        });
+        
+        runBox.innerHTML = `
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
+                <input type="text" class="run-name-field" placeholder="Run Name" value="${run.name || `Run ${runIdx + 1}`}" style="flex: 1; padding: 8px; font-size: 0.9rem;" onchange="updateRunName(${runIdx}, this.value)">
+                <button type="button" class="btn" style="width: auto; padding: 8px 12px; margin-bottom: 0; font-size: 0.8rem; background-color: var(--accent-red);" onclick="deleteSequentialRun(${runIdx})">Delete Run</button>
+            </div>
+            <div class="steps-list-container" id="steps-container-${runIdx}">
+                ${stepsHTML}
+            </div>
+            <button type="button" class="btn" style="background-color: var(--accent-blue); padding: 8px; font-size: 0.8rem; width: auto; margin-top: 5px; margin-bottom: 0;" onclick="addStepToRun(${runIdx})">+ Add Step</button>
+        `;
+        container.appendChild(runBox);
+    });
+}
+
+function saveSequentialRunsInputs() {
+    if (!currentSettingsData) return;
+    const runs = currentSettingsData.sequential_runs || [];
+    
+    const nameFields = document.querySelectorAll('.run-name-field');
+    nameFields.forEach((field, runIdx) => {
+        if (runs[runIdx]) {
+            runs[runIdx].name = field.value.trim() || `Run ${runIdx + 1}`;
+        }
+    });
+    
+    const selectElements = document.querySelectorAll('.step-zone-select');
+    selectElements.forEach(sel => {
+        const runIdx = parseInt(sel.getAttribute('data-run'));
+        const stepIdx = parseInt(sel.getAttribute('data-step'));
+        const val = parseInt(sel.value);
+        if (runs[runIdx] && runs[runIdx].steps && runs[runIdx].steps[stepIdx]) {
+            runs[runIdx].steps[stepIdx].pin = val;
+        }
+    });
+    
+    const durationInputs = document.querySelectorAll('.step-duration-input');
+    durationInputs.forEach(inp => {
+        const runIdx = parseInt(inp.getAttribute('data-run'));
+        const stepIdx = parseInt(inp.getAttribute('data-step'));
+        const val = parseInt(inp.value) || 5;
+        if (runs[runIdx] && runs[runIdx].steps && runs[runIdx].steps[stepIdx]) {
+            runs[runIdx].steps[stepIdx].duration_mins = val;
+        }
+    });
+}
+
+function addEmptySequentialRun() {
+    saveSequentialRunsInputs();
+    if (!currentSettingsData.sequential_runs) {
+        currentSettingsData.sequential_runs = [];
+    }
+    const newIdx = currentSettingsData.sequential_runs.length + 1;
+    
+    const masterValve = parseInt(document.getElementById('master_valve').value);
+    let defaultPin = 0;
+    if (masterValve === 0) defaultPin = 1;
+
+    currentSettingsData.sequential_runs.push({
+        name: `Sequential Run ${newIdx}`,
+        steps: [
+            { pin: defaultPin, duration_mins: 5 }
+        ]
+    });
+    renderSequentialRuns();
+}
+
+function deleteSequentialRun(runIdx) {
+    saveSequentialRunsInputs();
+    currentSettingsData.sequential_runs.splice(runIdx, 1);
+    renderSequentialRuns();
+}
+
+function addStepToRun(runIdx) {
+    saveSequentialRunsInputs();
+    const masterValve = parseInt(document.getElementById('master_valve').value);
+    let defaultPin = 0;
+    if (masterValve === 0) defaultPin = 1;
+    
+    currentSettingsData.sequential_runs[runIdx].steps.push({
+        pin: defaultPin,
+        duration_mins: 5
+    });
+    renderSequentialRuns();
+}
+
+function deleteStep(runIdx, stepIdx) {
+    saveSequentialRunsInputs();
+    currentSettingsData.sequential_runs[runIdx].steps.splice(stepIdx, 1);
+    renderSequentialRuns();
+}
+
+function updateRunName(runIdx, newName) {
+    if (currentSettingsData && currentSettingsData.sequential_runs[runIdx]) {
+        currentSettingsData.sequential_runs[runIdx].name = newName.trim() || `Run ${runIdx + 1}`;
+    }
+}
+
+function saveOnlySequentialRuns() {
+    if (!currentSettingsData) {
+        alert('Cannot save. Settings data not loaded.');
+        return;
+    }
+    
+    saveSequentialRunsInputs();
+    
+    const ssid = document.getElementById('ssid').value;
+    const wifi_password = document.getElementById('wifi_password').value;
+    const mqtt_enabled = document.getElementById('enable_mqtt').checked ? 1 : 0;
+    const mqtt_server = document.getElementById('mqtt_server').value;
+    const mqtt_username = document.getElementById('mqtt_username').value;
+    const mqtt_password = document.getElementById('mqtt_password').value;
+    const timezone = document.getElementById('timezone').value;
+    const master_valve = parseInt(document.getElementById('master_valve').value);
+    
+    const zoneNameInputs = document.querySelectorAll('.zone-name-input');
+    const zoneNames = Array.from(zoneNameInputs).map(input => input.value || input.placeholder);
+
+    const jsonData = {
+        ssid: ssid,
+        wifi_password: wifi_password,
+        mqtt_enabled: mqtt_enabled,
+        mqtt_server: mqtt_server,
+        mqtt_username: mqtt_username,
+        mqtt_password: mqtt_password,
+        timezone: timezone,
+        master_valve: master_valve,
+        zone_names: zoneNames,
+        sequential_runs: currentSettingsData.sequential_runs || []
+    };
+
+    fetch('/save-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('Sequential runs saved successfully!');
+        } else {
+            alert('Failed to save sequential runs.');
+        }
+    })
+    .catch(error => console.error('Error saving sequential runs:', error));
+}
+
+function saveSettings() {
+    const ssid = document.getElementById('ssid').value;
+    const wifi_password = document.getElementById('wifi_password').value;
+    const mqtt_enabled = document.getElementById('enable_mqtt').checked ? 1 : 0;
+    const mqtt_server = document.getElementById('mqtt_server').value;
+    const mqtt_username = document.getElementById('mqtt_username').value;
+    const mqtt_password = document.getElementById('mqtt_password').value;
+    const timezone = document.getElementById('timezone').value;
+    const master_valve = parseInt(document.getElementById('master_valve').value);
+    const update_server = document.getElementById('update_server').value;
+
+    const zoneNameInputs = document.querySelectorAll('.zone-name-input');
+    const zoneNames = Array.from(zoneNameInputs).map(input => input.value || input.placeholder);
+
+    saveSequentialRunsInputs();
+
+    const jsonData = {
+        ssid: ssid,
+        wifi_password: wifi_password,
+        mqtt_enabled: mqtt_enabled,
+        mqtt_server: mqtt_server,
+        mqtt_username: mqtt_username,
+        mqtt_password: mqtt_password,
+        timezone: timezone,
+        master_valve: master_valve,
+        zone_names: zoneNames,
+        sequential_runs: (currentSettingsData && currentSettingsData.sequential_runs) || [],
+        update_server: update_server
+    };
 
     fetch('/save-settings', {
         method: 'POST',
@@ -121,8 +831,130 @@ function saveSettings() {
     .catch(error => console.error('Error saving settings:', error));
 }
 
-
+function triggerOnlineUpdate(event) {
+    const versionSelect = document.getElementById('otaVersionSelect');
+    const version = versionSelect.value;
+    
+    if (!confirm("Are you sure you want to download and install the latest " + version + " firmware from Intellidwell? The device will restart automatically after the update.")) {
+        return;
+    }
+    
+    const btn = document.getElementById('otaStartBtn');
+    btn.disabled = true;
+    btn.innerText = "Updating...";
+    
+    const wrapper = document.getElementById('otaProgressWrapper');
+    const progressStatus = document.getElementById('otaProgressStatus');
+    const progressPercent = document.getElementById('otaProgressPercent');
+    const progressBar = document.getElementById('otaProgressBar');
+    const consoleLog = document.getElementById('otaLogConsole');
+    
+    wrapper.style.display = "block";
+    consoleLog.innerHTML = "";
+    progressBar.style.width = "0%";
+    progressBar.style.backgroundColor = "var(--accent-emerald)";
+    progressPercent.innerText = "0%";
+    progressStatus.innerText = "Starting...";
+    
+    let logsRendered = 0;
+    
+    function appendLog(text) {
+        const line = document.createElement('div');
+        line.innerText = text;
+        consoleLog.appendChild(line);
+        consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+    
+    function updateUI(status) {
+        if (status.error) {
+            throw new Error(status.error);
+        }
+        
+        progressBar.style.width = status.progress + "%";
+        progressPercent.innerText = status.progress + "%";
+        
+        // Render new logs
+        if (status.logs && status.logs.length > logsRendered) {
+            for (let i = logsRendered; i < status.logs.length; i++) {
+                appendLog(status.logs[i]);
+            }
+            logsRendered = status.logs.length;
+        }
+        
+        if (status.progress === 100 || status.complete) {
+            progressStatus.innerText = "Rebooting...";
+            return true;
+        }
+        
+        progressStatus.innerText = "Downloading...";
+        return false;
+    }
+    
+    appendLog("[DEBUG] Initiating update trigger request...");
+    
+    // Start the update
+    fetch('/ota/pull?version=' + version, { method: 'POST' })
+    .then(async response => {
+        appendLog("[DEBUG] Trigger request completed. HTTP Status: " + response.status);
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || ("HTTP Status " + response.status));
+        }
+        
+        appendLog("[DEBUG] Starting status polling interval...");
+        
+        // Poll status every 1.5 seconds
+        const pollInterval = setInterval(() => {
+            fetch('/ota/status')
+            .then(res => {
+                if (res.ok) {
+                    return res.json();
+                }
+                throw new Error("Status API HTTP " + res.status);
+            })
+            .then(statusData => {
+                const isFinished = updateUI(statusData);
+                if (isFinished) {
+                    clearInterval(pollInterval);
+                    appendLog("[DEBUG] Update process finished. Device is rebooting...");
+                    
+                    setTimeout(() => {
+                        alert("Firmware updated successfully! The device is rebooting. Page will now refresh.");
+                        window.location.reload();
+                    }, 8000);
+                }
+            })
+            .catch(err => {
+                clearInterval(pollInterval);
+                const lastPercent = parseInt(progressPercent.innerText) || 0;
+                if (lastPercent >= 90) {
+                    appendLog("[DEBUG] Connection lost. Device is rebooting...");
+                    progressStatus.innerText = "Rebooting...";
+                    progressBar.style.width = "100%";
+                    progressPercent.innerText = "100%";
+                    setTimeout(() => {
+                        alert("Firmware updated successfully! The device is rebooting. Page will now refresh.");
+                        window.location.reload();
+                    }, 8000);
+                } else {
+                    appendLog("[ERROR] Status poll failed: " + err.message);
+                    progressBar.style.backgroundColor = "var(--accent-red)";
+                    progressStatus.innerText = "Failed";
+                    btn.disabled = false;
+                    btn.innerText = "Check & Install Update";
+                }
+            });
+        }, 1500);
+    })
+    .catch(error => {
+        appendLog("[ERROR] Trigger request failed: " + error.message);
+        progressBar.style.backgroundColor = "var(--accent-red)";
+        progressStatus.innerText = "Failed";
+        btn.disabled = false;
+        btn.innerText = "Check & Install Update";
+        alert("Firmware Update Failed: " + error.message);
+    });
+}
 </script>
-
 </body>
 </html>
