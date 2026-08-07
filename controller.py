@@ -37,7 +37,10 @@ def load_settings():
             if not isinstance(config, dict):
                 raise ValueError("Config is not a valid dictionary.")
     except (OSError, ValueError) as e:
-        print(f"Error loading settings.json: {e}, loading default settings...")
+        try:
+            print(f"Error loading settings.json: {e}, loading default settings...")
+        except OSError:
+            pass
         config = {}
     return {
         "ssid": config.get("ssid", ""),
@@ -209,10 +212,16 @@ def log_message(message):
         with open(LOG_FILE, 'w') as f:
             f.write("\n".join(_log_cache) + "\n")
     except Exception as e:
-        print(f"Failed to log message: {e}")
-        print(f"LOG ENTRY (Fallback): {log_entry}")
+        try:
+            print(f"Failed to log message: {e}")
+            print(f"LOG ENTRY (Fallback): {log_entry}")
+        except OSError:
+            pass
 
-    print(f"LOG: {timestamp}: {message}")
+    try:
+        print(f"LOG: {timestamp}: {message}")
+    except OSError:
+        pass
 
 
 def load_rain_delay():
@@ -1220,7 +1229,10 @@ async def connect_to_wifi(fallback_to_ap=True):
 
             if wifi.isconnected():
                 log_message('Connected to Wi-Fi as sprinklers.local')
-                print('Wifi connected as sprinklers.local, net={}, gw={}, dns={}'.format(*wifi.ifconfig()))
+                try:
+                    print('Wifi connected as sprinklers.local, net={}, gw={}, dns={}'.format(*wifi.ifconfig()))
+                except OSError:
+                    pass
                 return  # Successfully connected
             else:
                 log_message(f"Wi-Fi connection attempt {attempt_count + 1} failed. Retrying...")
