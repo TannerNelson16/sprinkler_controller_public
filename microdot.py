@@ -7,12 +7,20 @@ servers for MicroPython and standard Python, with multithreading support for
 Python interpreters that support it.
 """
 try:
-    from sys import print_exception
+    from sys import print_exception as _print_exception
+    def print_exception(exc):
+        try:
+            _print_exception(exc)
+        except OSError:
+            pass
 except ImportError:  # pragma: no cover
     import traceback
 
     def print_exception(exc):
-        traceback.print_exc()
+        try:
+            traceback.print_exc()
+        except OSError:
+            pass
 try:
     import uerrno as errno
 except ImportError:

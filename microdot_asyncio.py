@@ -268,8 +268,11 @@ class Microdot(BaseMicrodot):
             await self.handle_request(reader, writer)
 
         if self.debug:  # pragma: no cover
-            print('Starting async server on {host}:{port}...'.format(
-                host=host, port=port))
+            try:
+                print('Starting async server on {host}:{port}...'.format(
+                    host=host, port=port))
+            except OSError:
+                pass
 
         try:
             self.server = await asyncio.start_server(serve, host, port,
@@ -342,9 +345,12 @@ class Microdot(BaseMicrodot):
             else:
                 raise
         if self.debug and req:  # pragma: no cover
-            print('{method} {path} {status_code}'.format(
-                method=req.method, path=req.path,
-                status_code=res.status_code))
+            try:
+                print('{method} {path} {status_code}'.format(
+                    method=req.method, path=req.path,
+                    status_code=res.status_code))
+            except OSError:
+                pass
 
     async def dispatch_request(self, req):
         if req:
