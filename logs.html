@@ -1,10 +1,3 @@
-<!--
-Intellidwell Sprinkler Controller Firmware
-Copyright (C) 2025 Tanner Nelson
-
-Licensed under GPLv3 with additional non-commercial hardware restrictions.
-See LICENSE for details.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -185,7 +178,10 @@ h1 {
 </div>
 
 <script>
+let _logsFetching = false;
 function fetchLogs() {
+    if (_logsFetching) return;
+    _logsFetching = true;
     fetch('/get-logs')
         .then(response => response.text())
         .then(data => {
@@ -200,6 +196,9 @@ function fetchLogs() {
         .catch(err => {
             document.getElementById('logArea').innerText = 'Failed to fetch logs.';
             console.error('Error fetching logs:', err);
+        })
+        .finally(() => {
+            _logsFetching = false;
         });
 }
 

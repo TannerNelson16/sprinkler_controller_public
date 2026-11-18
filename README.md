@@ -1,8 +1,21 @@
-# 🏠 Intellidwell Smart Sprinkler Controller Firmware
+# 💧 SprinklerID (by IntelliDwell) — 10-Zone ESP32 Smart Sprinkler Controller Firmware
 
-This repository contains the open-source firmware for the **Intellidwell ESP32-Based Smart Sprinkler Controller**, developed by Tanner Nelson. It is designed to run on ESP32 microcontrollers and provides a responsive, local-first web interface, per-zone scheduling, MQTT telemetry integration, and multi-zone support with rain delay logic.
+<p align="center">
+  <img src="attachments/sprinklerid_logo.jpg" width="70%" alt="SprinklerID by IntelliDwell">
+</p>
 
-This code powers the official Intellidwell controller hardware, which is available for purchase. It is released for educational purposes, hobbyists, and developers who wish to contribute to or adapt the project for **personal** and **non-commercial** use.
+> **“SprinklerID identifies your irrigation needs—without needing to identify YOU. Total local control with your privacy in mind. SprinklerID, SprinklerIntelliDwell.”**
+
+This repository contains the official open-source MicroPython firmware (`v2.1.28`) for **SprinklerID by IntelliDwell**, developed by Tanner Nelson. It runs on dual-core ESP32 microcontrollers and provides a fast, local-first web console (`http://sprinklers.local`), per-zone cycle-and-soak scheduling, sequential multi-zone queues, official **HACS Home Assistant** & **MQTT Auto-Discovery** integration, smart multi-source weather rain-delay automation, an optional Cloud & 2D Yard Map bridge (`https://sprinklers.intellidwell.net`), and a companion **Android App** (Local-Only & Cloud modes, with iOS coming soon).
+
+---
+
+## 🔗 Quick Links
+
+* **Hardware & Product Page:** [https://www.intellidwell.net/sprinklercontroller](https://www.intellidwell.net/sprinklercontroller)
+* **Official Documentation & API Guide:** [https://docs.intellidwell.net/sprinkler/](https://docs.intellidwell.net/sprinkler/)
+* **Download Android Companion App (`.APK`):** [https://www.intellidwell.net/static/SprinklerID.apk](https://www.intellidwell.net/static/SprinklerID.apk)
+* **Optional Cloud & 2D Yard Map Portal:** [https://sprinklers.intellidwell.net](https://sprinklers.intellidwell.net)
 
 ---
 
@@ -11,19 +24,17 @@ This code powers the official Intellidwell controller hardware, which is availab
 This project is licensed under the [GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.en.html), **with additional restrictions on commercial use of this code in hardware products**.
 
 ### In Plain English:
-*   ✅ **You can** view, modify, and run the code for personal projects.
-*   ✅ **You can** fork the project and share improvements (as long as they remain open-source under the GPLv3).
-*   ❌ **You may NOT** manufacture, sell, or distribute hardware products that use this code or its derivatives without express written permission from the author.
-
-*The intent is to support open development and tinkering while protecting against commercial knockoffs.*
+* ✅ **You can** view, modify, and run the code for personal projects.
+* ✅ **You can** fork the project and share improvements (as long as they remain open-source under the GPLv3).
+* ❌ **You may NOT** manufacture, sell, or distribute hardware products that use this code or its derivatives without express written permission from the author.
 
 If you are interested in commercial licensing, please contact Tanner Nelson at [tanner.nelson@intellidwell.net](mailto:tanner.nelson@intellidwell.net).
 
 ---
 
-## 📺 Web User Interface
+## 📺 Web Console & Home Assistant Integration
 
-The controller hosts a responsive, dark-mode web console directly on the ESP32 chip, allowing for seamless management from any device on your local network.
+The controller hosts a responsive dark-mode web console directly on the ESP32 (`http://sprinklers.local`), allowing seamless management from any browser on your local network alongside our mobile app and Home Assistant.
 
 <p align="center">
   <img src="attachments/Screenshot_1.png" width="45%" alt="Main Dashboard - Home">
@@ -40,21 +51,24 @@ The controller hosts a responsive, dark-mode web console directly on the ESP32 c
 
 ---
 
-## 🔧 Features & Architecture
+## 🔧 Features & Architecture (`v2.1.28`)
 
-*   **10-Zone Control + Master Valve**: Supports up to 10 independent 24VAC zone solenoids with configurable master valve pre-delay (1000ms) to prevent water hammer and current brownouts.
-*   **Local-First & Private**: Operates entirely on your local network. No internet access or cloud subscriptions required.
-*   **MQTT Auto-Discovery**: Integrates with Home Assistant automatically out-of-the-box using standard MQTT discovery protocols.
-*   **NTP Time Sync**: Automatically synchronizes system clock via NTP with localized time zone and US DST calculations.
-*   **Serialize requests (Concurrency Protection)**: Queues HTTP API calls to maintain stability and prevent browser socket exhaustion on ESP32.
-*   **Background Wi-Fi Health Monitor**: Spawns a background worker thread to continuously audit connection health and resolve hostname/DNS loss.
-*   **AP Fallback Mode**: If Wi-Fi goes down, the controller hosts a local access point (`intelidwellSC`) to allow local recovery.
+* **10-Zone Control + Master Valve**: Controls up to 10 independent 24VAC zone solenoids with a configurable Master Valve / Pump Relay and a 1000ms pre-open interlock delay to prevent water hammer and current brownouts.
+* **100% Local-First (No ID Required)**: Operates autonomously on your local Wi-Fi network (`http://sprinklers.local`) and via the **SprinklerID Mobile App** in **Local-Only Mode**—no account registration or internet connection required.
+* **Optional Cloud Bridge & Interactive 2D Yard Map**: Pair with [sprinklers.intellidwell.net](https://sprinklers.intellidwell.net) over an outbound WebSocket (`cloud.py`) for remote control without port forwarding, multi-property/contractor sharing, and an interactive **2D CAD Yard Map** with AI satellite scanning and live rotor/dripper animations.
+* **Official HACS Home Assistant Integration & Native MQTT**: Supports both our custom local HACS integration (`ha-intellidwell`) and built-in MQTT Home Assistant Auto-Discovery.
+* **Smart Multi-Source Weather & Rain Delay Arbitration (`ha_rain_delay`)**:
+  * When Cloud Services are disabled (`cloud_enabled == 0`), the controller automatically applies rain delays pushed by Home Assistant (`POST /api/weather`).
+  * When Cloud Services are enabled (`cloud_enabled == 1`), the Cloud Server syncs `ha_rain_delay` (`0` when using **Ambient Weather Network** or **NWS** stations; `1` when using **Controller Pushed / Home Assistant**) so Home Assistant telemetry (`temp`, `rain_today_in`) is recorded without overwriting your Cloud weather station's rain delay.
+* **ESP-IDF Internal C DRAM Protection & Zero-Regex Routing**: Optimized Microdot HTTP/WebSocket framing and `mpy-cross -O3` bytecode compilation keep ESP-IDF internal C DRAM healthy (`>26 KB` free) during concurrent Local UI, Home Assistant polling, and Cloud WebSocket operation.
+* **Long-Range 20MHz 802.11b + Strongest-BSSID Roaming**: Automatically scans 2.4GHz mesh networks and pins association to the strongest BSSID in `network.MODE_11B` (`pm=0`, `txpower=15`), eliminating OFDM rate-collapse stalls at weak outdoor RSSI (`-75` to `-80 dBm`).
+* **1-Click Over-The-Air (OTA) Updates**: Pull Stable (`master`) or Beta (`beta`) firmware updates directly from the device Settings page.
 
 ---
 
 ## 📦 Enclosure & Hardware Layout
 
-The V2 architecture separates the high-voltage mains AC transformer from the low-voltage logic, featuring a sleek wall-mount casing with a magnetic quick-access faceplate.
+The V2 architecture separates the 24VAC wall transformer from the low-voltage enclosure, featuring a low-profile wall-mount casing with a magnetic quick-access faceplate.
 
 <p align="center">
   <img src="attachments/Product_1.jpg" width="48%" alt="New Enclosure Closed">
@@ -69,68 +83,49 @@ The V2 architecture separates the high-voltage mains AC transformer from the low
 
 ## 🚀 Flashing & Installation Guide
 
-For developers building their own units or flashing custom boards:
-
 ### 1. Flash MicroPython onto the ESP32
-Ensure your ESP32 board is connected to your computer via USB.
-1. Install `esptool`:
-   ```bash
-   pip install esptool
-   ```
-2. Erase the ESP32 flash memory:
-   ```bash
-   esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash
-   ```
-3. Write the generic MicroPython binary (v1.22+ recommended):
-   ```bash
-   esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 write_flash -z 0x1000 ESP32_GENERIC-latest.bin
-   ```
-
-### 2. Upload Firmware Files to the Board
-Upload all project files to the root directory of the ESP32 using `ampy` or `mremote`:
 ```bash
-pip install adafruit-ampy
-
-# Core logic & bootstrap
-ampy --port /dev/ttyUSB0 put main.py
-ampy --port /dev/ttyUSB0 put controller.py
-
-# Networking & server libraries
-ampy --port /dev/ttyUSB0 put microdot.py
-ampy --port /dev/ttyUSB0 put microdot_asyncio.py
-
-# Frontend assets
-ampy --port /dev/ttyUSB0 put index.html
-ampy --port /dev/ttyUSB0 put scheduler.html
-ampy --port /dev/ttyUSB0 put logs.html
-ampy --port /dev/ttyUSB0 put settings.html
-
-# Configuration storage defaults
-ampy --port /dev/ttyUSB0 put settings.json
+pip install esptool
+esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 write_flash -z 0x1000 ESP32_GENERIC-latest.bin
 ```
 
-### 3. Initial Configuration
+### 2. Compile (`.mpy`) & Upload Firmware Files
+For optimal ESP32 RAM headroom, precompile the core modules with `mpy-cross -O3` before uploading:
+```bash
+pip install mpy-cross mpremote
+
+mpy-cross -O3 -s microdot.py -o microdot.mpy microdot.py
+mpy-cross -O3 -s microdot_asyncio.py -o microdot_asyncio.mpy microdot_asyncio.py
+mpy-cross -O3 -s cloud.py -o cloud.mpy cloud.py
+mpy-cross -O3 -s controller.py -o controller.mpy controller.py
+
+mpremote connect /dev/ttyUSB0 cp main.py controller.mpy cloud.mpy microdot.mpy microdot_asyncio.py index.html scheduler.html logs.html settings.html settings.json :
+```
+
+### 3. Initial Wi-Fi Configuration
 1. Reboot the controller board.
-2. Search for the Wi-Fi access point named **`intelidwellSC`** and connect using password **`Sprinkler12345`**.
-3. Open a web browser and go to `http://192.168.4.1`.
-4. Enter your home Wi-Fi SSID, password, and optional MQTT Broker details. Click **Connect**.
-5. Once rebooted, access the dashboard at `http://sprinklers.local` (or the IP address assigned by your router).
+2. Connect to the temporary Wi-Fi access point **`intelidwellSC`** (password **`Sprinkler12345`**).
+3. Open `http://192.168.4.1`, select your 2.4GHz Wi-Fi network, and click **Connect**.
+4. Access the dashboard at **`http://sprinklers.local`** (or via the **SprinklerID** mobile app).
 
 ---
 
 ## 💻 Local REST API Endpoints
 
-The controller provides a lightweight REST API for automation scripts and third-party integrations:
-
-*   **`GET /api/status`**: Returns JSON telemetry including relay states, active timer counts, and sequential run queue steps.
-*   **`GET /relay/<zone_index>/<on_or_off>`**: Toggles a zone manually (`on` or `off`). E.g., `GET /relay/0/on`.
-*   **`GET /relay-timer/<zone_index>/<duration_minutes>`**: Runs a timed zone cycle.
-*   **`GET /cancel-timer/<zone_index>`**: Halts active timed cycle and shuts off zone solenoid.
-*   **`GET /set-rain-delay/<days>`**: Disables scheduled tasks for the specified duration.
-*   **`POST /restart`**: Triggers soft system reboot.
+* **`GET /api/status`**: Returns JSON telemetry (`firmware_version`, `relay_states`, active `timers`, sequential `queue`, and latest `weather` push).
+* **`GET /relay/<zone_index>/<on_or_off>`**: Toggles a zone manually (`0–9`).
+* **`GET /relay-timer/<zone_index>/<duration_minutes>`**: Starts a timed zone run (`1–240` minutes).
+* **`GET /cancel-timer/<zone_index>`**: Stops active watering and cancels timers.
+* **`POST /start-run-queue` / `POST /stop-run-queue`**: Starts or stops a multi-zone sequential run queue.
+* **`GET /get-schedules` / `POST /add-schedule/<pin>` / `POST /edit-schedule/<pin>/<id>`**: Reads or updates on-device zone schedules.
+* **`GET /set-rain-delay/<days>` / `GET /get-rain-delay`**: Sets or reads the active rain delay (`0–5` days).
+* **`POST /api/weather`**: Pushes local weather telemetry (`rain_today_in`, `temp`, `source`, `delay_days`) from Home Assistant.
+* **`GET /api/cloud/status` / `POST /api/cloud/login`**: Queries or pairs the optional Cloud WebSocket bridge.
+* **`POST /ota/pull?version=beta` / `GET /ota/status`**: Triggers and monitors an Over-The-Air firmware update.
 
 ---
 
 ## 🤝 Support & Contribution
 
-Official hardware casing kits, pre-assembled PCBs, and support details are available at the [Intellidwell Store](https://intellidwell.net). For direct help or inquiries, contact us at [support@intellidwell.net](mailto:support@intellidwell.net).
+Official hardware kits, documentation, and support are available at [intellidwell.net](https://www.intellidwell.net/sprinklercontroller) and [docs.intellidwell.net](https://docs.intellidwell.net/sprinkler/). For inquiries, contact [support@intellidwell.net](mailto:support@intellidwell.net).
